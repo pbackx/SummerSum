@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // All direct client-side read and write access is disabled.
+    // The FastAPI backend uses the Firebase Admin SDK and bypasses these rules securely.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SummerSum - Jouw Persoonlijke Wiskunde Coach</title>
+    <!-- Premium Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <!-- Glassmorphic Auth Overlay -->
+    <div id="auth-overlay" class="auth-overlay">
+        <div class="auth-card">
+            <div class="auth-header">
+                <i class="fa-solid fa-calculator-combined auth-logo-icon"></i>
+                <h2>Welkom bij <span>Summer<span>Sum</span></span></h2>
+                <p id="auth-sub-title">Meld je aan met Google om je voortgang op te slaan</p>
+            </div>
+            
+            <div id="auth-error-msg" class="auth-error hidden">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span id="auth-error-text">Foutmelding</span>
+            </div>
+
+            <button id="btn-google-auth" class="btn btn-google btn-block">
+                <i class="fa-brands fa-google"></i> Doorgaan met Google
+            </button>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- Dashboard Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fa-solid fa-calculator-combined gradient-text-icon"></i>
+                    <span>Summer<span>Sum</span></span>
+                </div>
+            </div>
+            
+            <!-- Streak & Summary -->
+            <div class="stats-panel">
+                <div class="stat-card streak-card">
+                    <div class="streak-fire">
+                        <i class="fa-solid fa-fire animate-bounce"></i>
+                    </div>
+                    <div class="stat-val" id="streak-val">0</div>
+                    <div class="stat-label">Dagen Streak</div>
+                </div>
+                
+                <div class="progress-ring-container">
+                    <svg class="progress-ring" width="120" height="120">
+                        <circle class="progress-ring-bg" stroke="rgba(255, 255, 255, 0.05)" stroke-width="8" fill="transparent" r="50" cx="60" cy="60"/>
+                        <circle id="progress-bar" class="progress-ring-bar" stroke="url(#gradient)" stroke-width="8" fill="transparent" r="50" cx="60" cy="60" stroke-dasharray="314.15" stroke-dashoffset="314.15"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#4f46e5" />
+                                <stop offset="100%" stop-color="#06b6d4" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <div class="progress-text">
+                        <span id="progress-pct">0%</span>
+                        <span class="subtext"><span id="solved-count">0</span>/<span id="total-count">0</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Topic Stats -->
+            <div class="topics-section">
+                <h3>Onderwerpen</h3>
+                <div id="topics-list" class="topics-list">
+                    <!-- Loaded dynamically -->
+                    <div class="topic-skeleton"></div>
+                    <div class="topic-skeleton"></div>
+                    <div class="topic-skeleton"></div>
+                </div>
+            </div>
+            
+            <!-- Admin Section (Only visible to admin) -->
+            <div id="admin-link-container" class="hidden" style="margin-bottom: 16px;">
+                <a href="admin.html" class="btn btn-block" style="background: rgba(255, 255, 255, 0.05); color: var(--text-main); border: 1px solid var(--border-glass); display: flex; justify-content: center; align-items: center; gap: 8px; text-decoration: none;">
+                    <i class="fa-solid fa-user-shield" style="color: var(--accent);"></i> Beheerderspaneel
+                </a>
+            </div>
+
+            <div class="sidebar-footer">
+                <div id="user-profile-footer" class="user-profile-footer hidden">
+                    <span id="user-email-display"></span>
+                    <button id="btn-logout" class="btn-logout" title="Uitloggen">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+                <p>Google & Kaggle Capstone Project</p>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="chat-area">
+            <header class="chat-header">
+                <div class="agent-profile">
+                    <div class="avatar">
+                        <i class="fa-solid fa-robot"></i>
+                        <span class="status-indicator online"></span>
+                    </div>
+                    <div class="agent-info">
+                        <h2>Wiskunde Coach</h2>
+                        <p id="agent-status">Online • Klaar om te helpen</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button id="btn-next-question" class="btn btn-primary" title="Vraag een nieuwe som aan">
+                        <i class="fa-solid fa-paper-plane"></i> Nieuwe Som
+                    </button>
+                </div>
+            </header>
+
+            <!-- Chat Message Window -->
+            <div id="chat-messages" class="chat-messages">
+                <div class="message system-msg">
+                    <p>Welkom bij <strong>SummerSum</strong>! Klik op <strong>Nieuwe Som</strong> om je wiskundevraag van vandaag te ontvangen. Je kunt je antwoord typen of een foto van je uitwerking uploaden!</p>
+                </div>
+            </div>
+
+            <!-- Chat Input Bar -->
+            <footer class="chat-input-container">
+                <form id="chat-form" class="chat-form" enctype="multipart/form-data">
+                    <div class="input-wrapper">
+                        <!-- Image Preview Area -->
+                        <div id="image-preview-container" class="image-preview-container hidden">
+                            <img id="image-preview" src="" alt="Preview">
+                            <button type="button" id="btn-remove-image" class="btn-circle btn-danger">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="controls-row">
+                            <!-- Image Attachment Button -->
+                            <label for="file-upload" class="btn-circle btn-attach" title="Foto van uitwerking toevoegen">
+                                <i class="fa-solid fa-camera"></i>
+                                <input type="file" id="file-upload" name="file" accept="image/*" class="hidden">
+                            </label>
+ 
+                            <!-- Text Input -->
+                            <input type="text" id="text-input" placeholder="Typ je antwoord of upload een foto van je uitwerking..." autocomplete="off">
+ 
+                            <!-- Submit Button -->
+                            <button type="submit" id="btn-submit" class="btn-circle btn-send" title="Verstuur antwoord">
+                                <i class="fa-solid fa-arrow-up"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Firebase SDK Compat -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

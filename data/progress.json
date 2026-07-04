@@ -1,0 +1,16 @@
+{
+  "completed_questions": {
+    "p2_1d": {
+      "attempts": 1,
+      "status": "incorrect"
+    }
+  },
+  "streak": 0,
+  "last_active": null,
+  "daily_history": [
+    {
+      "date": "2026-07-04",
+      "questions_solved": 0
+    }
+  ]
+}

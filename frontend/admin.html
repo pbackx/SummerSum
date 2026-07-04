@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SummerSum - Beheerderspaneel</title>
+    <!-- Premium Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="index.css">
+    <style>
+        .admin-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+        }
+        .admin-card {
+            background: rgba(17, 24, 39, 0.65);
+            border: 1px solid var(--border-glass);
+            border-radius: 24px;
+            padding: 40px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: var(--shadow-premium);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            text-align: center;
+        }
+        .admin-card h2 {
+            font-family: var(--font-heading);
+            font-weight: 800;
+            font-size: 28px;
+            margin-top: 16px;
+            margin-bottom: 12px;
+        }
+        .admin-card p {
+            color: var(--text-muted);
+            line-height: 1.6;
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+        .admin-icon {
+            font-size: 64px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 15px rgba(79, 70, 229, 0.3));
+        }
+        .admin-icon.error {
+            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 15px rgba(239, 68, 68, 0.3));
+        }
+        .admin-data-box {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: left;
+            font-family: monospace;
+            font-size: 13px;
+            color: #10b981;
+            margin-bottom: 24px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Status Card (Loading by default) -->
+        <div id="status-card" class="admin-card">
+            <div id="card-icon" class="admin-icon">
+                <i class="fa-solid fa-circle-notch fa-spin"></i>
+            </div>
+            <h2 id="card-title">Laden...</h2>
+            <p id="card-desc">Controleert beheerderstoegang...</p>
+            <div id="admin-data" class="admin-data-box hidden"></div>
+            
+            <a href="/" class="btn btn-primary btn-block" style="display: inline-flex; justify-content: center; text-decoration: none;">
+                <i class="fa-solid fa-arrow-left"></i> Terug naar Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Firebase SDK Compat -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const cardIcon = document.getElementById("card-icon");
+            const cardTitle = document.getElementById("card-title");
+            const cardDesc = document.getElementById("card-desc");
+            const adminData = document.getElementById("admin-data");
+            const API_BASE = "http://localhost:8000/api";
+            
+            try {
+                // Fetch config
+                const configRes = await fetch(`${API_BASE}/config`);
+                if (!configRes.ok) throw new Error("Backend API configuratiefout.");
+                const firebaseConfig = await configRes.json();
+                
+                // Initialize Firebase
+                firebase.initializeApp(firebaseConfig);
+                const auth = firebase.auth();
+                
+                auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        // User is authenticated, check email
+                        if (user.email !== "peter.backx@gmail.com") {
+                            showError("Toegang Geweigerd", "Je bent ingelogd als " + user.email + ". Alleen peter.backx@gmail.com heeft toegang tot dit beheerderspaneel.");
+                            return;
+                        }
+                        
+                        // User is peter.backx@gmail.com, fetch secure data from backend
+                        try {
+                            const idToken = await user.getIdToken();
+                            const dataRes = await fetch(`${API_BASE}/admin/data`, {
+                                headers: { "Authorization": `Bearer ${idToken}` }
+                            });
+                            
+                            if (dataRes.status === 403) {
+                                showError("Toegang Geweigerd (Backend)", "De server heeft toegang geweigerd voor jouw account.");
+                                return;
+                            } else if (!dataRes.ok) {
+                                throw new Error("Fout bij ophalen backend data.");
+                            }
+                            
+                            const data = await dataRes.json();
+                            showSuccess(data);
+                        } catch (err) {
+                            showError("Systeemfout", "Kon beheerderstoegang niet verifiëren op de server: " + err.message);
+                        }
+                    } else {
+                        showError("Niet Ingelogd", "Meld je eerst aan met je Google-account op de startpagina.");
+                    }
+                });
+            } catch (err) {
+                showError("Verbindingsfout", "Kan geen verbinding maken met de backend server.");
+            }
+            
+            function showError(title, desc) {
+                cardIcon.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i>';
+                cardIcon.className = "admin-icon error";
+                cardTitle.textContent = title;
+                cardDesc.textContent = desc;
+                adminData.classList.add("hidden");
+            }
+            
+            function showSuccess(data) {
+                cardIcon.innerHTML = '<i class="fa-solid fa-user-shield"></i>';
+                cardIcon.className = "admin-icon";
+                cardTitle.textContent = "Beheerderspaneel";
+                cardDesc.textContent = "Je bent succesvol geverifieerd als administrator. Toegang is verleend.";
+                adminData.innerHTML = JSON.stringify(data, null, 2).replace(/\n/g, '<br>').replace(/ /g, '&nbsp;');
+                adminData.classList.remove("hidden");
+            }
+        });
+    </script>
+</body>
+</html>
