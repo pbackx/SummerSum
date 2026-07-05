@@ -80,6 +80,24 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
+    // Helper to render math using KaTeX
+    function renderMath(element) {
+        if (window.renderMathInElement) {
+            window.renderMathInElement(element, {
+                delimiters: [
+                    {left: "$$", right: "$$", display: true},
+                    {left: "$", right: "$", display: false},
+                    {left: "\\(", right: "\\)", display: false},
+                    {left: "\\[", right: "\\]", display: true}
+                ],
+                throwOnError: false
+            });
+        } else {
+            // Retry if KaTeX deferred script hasn't finished loading
+            setTimeout(() => renderMath(element), 100);
+        }
+    }
+
     // Append a message to the chat window
     function appendMessage(sender, content, mediaUrl = null, extraHtml = "") {
         const msgDiv = document.createElement("div");
@@ -97,12 +115,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         msgDiv.innerHTML = html;
         chatMessages.appendChild(msgDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // Render math equations with KaTeX
+        renderMath(msgDiv);
+        
         return msgDiv;
     }
 
     // Load next question from the API
     async function fetchNextQuestion() {
         if (!idToken) return;
+        
+        const hintsContainer = document.getElementById("hints-container");
+        if (hintsContainer) {
+            hintsContainer.classList.add("hidden");
+        }
+        
         // Show status
         appendMessage("system-msg", "Coach zoekt een passende som voor je op...");
         
@@ -113,6 +141,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (!res.ok) throw new Error("Backend is offline or database empty.");
             const question = await res.json();
             currentQuestion = question;
+            
+            if (hintsContainer) {
+                hintsContainer.classList.remove("hidden");
+            }
             
             // Construct the path to serve the image (from GCS public URL or local fallback)
             const questionImageUrl = question.question_image_url || `${window.location.origin}/${question.question_image}`;
@@ -241,6 +273,10 @@ document.addEventListener("DOMContentLoaded", async () => {
             
             if (data.is_correct) {
                 currentQuestion = null; // Reset current question after correct solve
+                const hintsContainer = document.getElementById("hints-container");
+                if (hintsContainer) {
+                    hintsContainer.classList.add("hidden");
+                }
             }
         } catch (err) {
             loadingDiv.remove();
@@ -299,6 +335,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                     userProfileFooter.classList.add("hidden");
                     authOverlay.classList.remove("hidden");
                     if (adminLinkContainer) adminLinkContainer.classList.add("hidden");
+                    const hintsContainer = document.getElementById("hints-container");
+                    if (hintsContainer) hintsContainer.classList.add("hidden");
                     
                     // Reset stats views
                     streakVal.textContent = "0";
@@ -345,6 +383,72 @@ document.addEventListener("DOMContentLoaded", async () => {
             console.error("Firebase Auth Init Failed:", err);
             appendMessage("coach", "Fout bij laden authenticatie. Controleer netwerkverbinding.");
         }
+    }
+    
+    // Hint buttons click handlers
+    const hintsContainer = document.getElementById("hints-container");
+    if (hintsContainer) {
+        hintsContainer.addEventListener("click", async (e) => {
+            const btn = e.target.closest(".btn-hint");
+            if (!btn || !currentQuestion || !idToken) return;
+            
+            const hintType = btn.getAttribute("data-hint");
+            let promptText = "";
+            let chatText = "";
+            
+            if (hintType === "klein") {
+                promptText = "Ik wil graag een kleine hint voor deze som.";
+                chatText = "💡 Ik wil graag een kleine hint.";
+            } else if (hintType === "formule") {
+                promptText = "Welke wiskunderegel of formule hoort bij deze som?";
+                chatText = "📘 Welke wiskunderegel of formule hoort hierbij?";
+            } else if (hintType === "voorbeeld") {
+                promptText = "Geef me een soortgelijk voorbeeld met de uitwerking.";
+                chatText = "🔍 Kun je me een vergelijkbaar voorbeeld geven?";
+            }
+            
+            if (!promptText) return;
+            
+            // Show student message in chat
+            appendMessage("student", chatText);
+            
+            // Loading state
+            const loadingDiv = appendMessage("system-msg", "Coach typt een hint...");
+            
+            // Disable input/buttons during request
+            const btnSubmit = document.getElementById("btn-submit");
+            btnSubmit.disabled = true;
+            textInput.disabled = true;
+            
+            // Submit to backend
+            const formData = new FormData();
+            formData.append("question_id", currentQuestion.id);
+            formData.append("student_answer_text", promptText);
+            
+            try {
+                const res = await fetch(`${API_BASE}/submit`, {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${idToken}` },
+                    body: formData
+                });
+                
+                if (!res.ok) throw new Error("Failed to get hint.");
+                const data = await res.json();
+                
+                loadingDiv.remove();
+                
+                // Show coach hint response
+                appendMessage("coach", data.feedback);
+                
+            } catch (err) {
+                loadingDiv.remove();
+                appendMessage("coach", "Er ging iets mis bij het ophalen van de hint. Probeer het opnieuw.");
+                console.error(err);
+            } finally {
+                btnSubmit.disabled = false;
+                textInput.disabled = false;
+            }
+        });
     }
     
     // Run initial load & setup

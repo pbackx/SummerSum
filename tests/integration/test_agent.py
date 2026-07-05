@@ -28,7 +28,11 @@ def test_agent_stream() -> None:
 
     session_service = InMemorySessionService()
 
-    session = session_service.create_session_sync(user_id="test_user", app_name="test")
+    session = session_service.create_session_sync(
+        user_id="test_user", 
+        app_name="test", 
+        state={"current_question_id": "test_q"}
+    )
     runner = Runner(agent=root_agent, session_service=session_service, app_name="test")
 
     message = types.Content(

@@ -10,6 +10,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- KaTeX for formula rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
@@ -129,6 +133,18 @@
 
             <!-- Chat Input Bar -->
             <footer class="chat-input-container">
+                <!-- Hint Buttons -->
+                <div id="hints-container" class="hints-container hidden">
+                    <button type="button" class="btn-hint" data-hint="klein">
+                        <i class="fa-solid fa-lightbulb"></i> Kleine hint
+                    </button>
+                    <button type="button" class="btn-hint" data-hint="formule">
+                        <i class="fa-solid fa-book"></i> Welke formule?
+                    </button>
+                    <button type="button" class="btn-hint" data-hint="voorbeeld">
+                        <i class="fa-solid fa-magnifying-glass"></i> Soortgelijk voorbeeld
+                    </button>
+                </div>
                 <form id="chat-form" class="chat-form" enctype="multipart/form-data">
                     <div class="input-wrapper">
                         <!-- Image Preview Area -->

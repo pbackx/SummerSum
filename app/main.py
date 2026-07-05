@@ -490,12 +490,10 @@ async def get_next_question(user_id: str = Depends(get_current_user)):
             # Create a remote session on Vertex AI Agent Runtime with GCS URIs in state
             remote_sess = await remote_agent.async_create_session(
                 user_id=user_id,
-                config={
-                    "session_state": {
-                        "question_image_gcs": question.get("question_image_gcs", ""),
-                        "solution_image_gcs": question.get("solution_image_gcs", ""),
-                        "status": "active"
-                    }
+                state={
+                    "question_image_gcs": question.get("question_image_gcs", ""),
+                    "solution_image_gcs": question.get("solution_image_gcs", ""),
+                    "status": "active"
                 }
             )
             remote_session_id = remote_sess.get("id")
@@ -547,12 +545,10 @@ async def submit_solution(
                 # Create a remote session on Vertex AI Agent Runtime
                 remote_sess = await remote_agent.async_create_session(
                     user_id=user_id,
-                    config={
-                        "session_state": {
-                            "question_image_gcs": question.get("question_image_gcs", ""),
-                            "solution_image_gcs": question.get("solution_image_gcs", ""),
-                            "status": "active"
-                        }
+                    state={
+                        "question_image_gcs": question.get("question_image_gcs", ""),
+                        "solution_image_gcs": question.get("solution_image_gcs", ""),
+                        "status": "active"
                     }
                 )
                 remote_session_id = remote_sess.get("id")
@@ -641,7 +637,7 @@ async def submit_solution(
         # Generate the step-by-step correct solution explanation using Gemini
         sol_gcs_uri = session.state.get("solution_image_gcs")
         if sol_gcs_uri:
-            explain_prompt = "Geef een heldere, stapsgewijze wiskundige uitleg in het Nederlands van de oplossing getoond in deze afbeelding."
+            explain_prompt = "Geef een heldere, stapsgewijze wiskundige uitleg in het Nederlands van de oplossing getoond in deze afbeelding. Gebruik LaTeX-formaat voor alle wiskundige formules, variabelen en vergelijkingen (bijvoorbeeld $2x^2$ of $\\frac{a}{b}$), zodat ze mooi gerenderd worden."
             try:
                 # Call Gemini for a single-turn explanation using GCS URI directly!
                 explain_response = client.models.generate_content(
