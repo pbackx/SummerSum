@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", async () => {
     const API_BASE = window.location.origin + "/api";
-    
+
     // DOM Elements
     const chatMessages = document.getElementById("chat-messages");
     const chatForm = document.getElementById("chat-form");
@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const imagePreview = document.getElementById("image-preview");
     const btnRemoveImage = document.getElementById("btn-remove-image");
     const btnNextQuestion = document.getElementById("btn-next-question");
-    
+
     // Stats elements
     const streakVal = document.getElementById("streak-val");
     const progressPct = document.getElementById("progress-pct");
@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const solvedCount = document.getElementById("solved-count");
     const totalCount = document.getElementById("total-count");
     const topicsList = document.getElementById("topics-list");
-    
+
     // Authentication DOM Elements
     const authOverlay = document.getElementById("auth-overlay");
     const authSubTitle = document.getElementById("auth-sub-title");
@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const userProfileFooter = document.getElementById("user-profile-footer");
     const btnGoogleAuth = document.getElementById("btn-google-auth");
     const adminLinkContainer = document.getElementById("admin-link-container");
-    
+
     let currentQuestion = null;
     let idToken = null;
     let auth = null;
@@ -43,25 +43,25 @@ document.addEventListener("DOMContentLoaded", async () => {
             });
             if (!res.ok) throw new Error("Failed to load statistics.");
             const data = await res.json();
-            
+
             // Update UI
             streakVal.textContent = data.streak;
             solvedCount.textContent = data.correct;
             totalCount.textContent = data.total_questions;
-            
+
             const pct = data.total_questions > 0 ? Math.round((data.completed / data.total_questions) * 100) : 0;
             progressPct.textContent = `${pct}%`;
-            
+
             // Progress ring dashoffset calculation (r=50, circumference = 2 * PI * r = 314.15)
             const circumference = 314.15;
             const offset = circumference - (pct / 100) * circumference;
             progressBar.style.strokeDashoffset = offset;
-            
+
             // Load topics list
             topicsList.innerHTML = "";
             for (const [name, stats] of Object.entries(data.topics)) {
                 const topicPct = stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0;
-                
+
                 const row = document.createElement("div");
                 row.className = "topic-row";
                 row.innerHTML = `
@@ -102,7 +102,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     function appendMessage(sender, content, mediaUrl = null, extraHtml = "") {
         const msgDiv = document.createElement("div");
         msgDiv.className = `message ${sender}`;
-        
+
         let html = "";
         if (mediaUrl) {
             html += `<img src="${mediaUrl}" class="question-img" alt="Wiskunde Vraag">`;
@@ -111,29 +111,29 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (extraHtml) {
             html += extraHtml;
         }
-        
+
         msgDiv.innerHTML = html;
         chatMessages.appendChild(msgDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
-        
+
         // Render math equations with KaTeX
         renderMath(msgDiv);
-        
+
         return msgDiv;
     }
 
     // Load next question from the API
     async function fetchNextQuestion() {
         if (!idToken) return;
-        
+
         const hintsContainer = document.getElementById("hints-container");
         if (hintsContainer) {
             hintsContainer.classList.add("hidden");
         }
-        
+
         // Show status
         appendMessage("system-msg", "Coach zoekt een passende som voor je op...");
-        
+
         try {
             const res = await fetch(`${API_BASE}/next_question`, {
                 headers: { "Authorization": `Bearer ${idToken}` }
@@ -141,23 +141,23 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (!res.ok) throw new Error("Backend is offline or database empty.");
             const question = await res.json();
             currentQuestion = question;
-            
+
             if (hintsContainer) {
                 hintsContainer.classList.remove("hidden");
             }
-            
+
             // Construct the path to serve the image (from GCS public URL or local fallback)
             const questionImageUrl = question.question_image_url || `${window.location.origin}/${question.question_image}`;
-            
+
             const extra = `
                 <div class="question-msg-content">
                     <span class="badge badge-${question.difficulty}">${question.difficulty}</span>
                     <p><em>Onderwerp: ${question.topic}</em></p>
                 </div>
             `;
-            
+
             const taskText = question.main_instruction ? `<strong>Opdracht: ${question.main_instruction}</strong><br><br>` : "";
-            
+
             appendMessage(
                 "coach",
                 `Hier is de wiskundevraag voor vandaag:<br><br>${taskText}<strong>"${question.text_nl}"</strong>. Los het op, schrijf je berekening op papier en stuur me een foto!`,
@@ -193,56 +193,56 @@ document.addEventListener("DOMContentLoaded", async () => {
     chatForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         if (!idToken) return;
-        
+
         const text = textInput.value.trim();
         const file = fileUpload.files[0];
-        
+
         if (!text && !file) return;
         if (!currentQuestion) {
             appendMessage("coach", "Vraag eerst een som aan met de knop 'Nieuwe Som'!");
             return;
         }
-        
+
         // Show student message in chat
         let mediaUrl = null;
         if (file) {
             mediaUrl = URL.createObjectURL(file);
         }
-        
+
         appendMessage("student", text || "Hier is mijn uitwerking op foto:", mediaUrl);
-        
+
         // Reset inputs
         textInput.value = "";
         fileUpload.value = "";
         imagePreviewContainer.classList.add("hidden");
-        
+
         // Loading state
         const loadingDiv = appendMessage("system-msg", "Coach beoordeelt jouw oplossing. Even geduld...");
-        
+
         // Prepare multipart form data
         const formData = new FormData();
         formData.append("question_id", currentQuestion.id);
         if (text) formData.append("student_answer_text", text);
         if (file) formData.append("student_answer_file", file);
-        
+
         try {
             const res = await fetch(`${API_BASE}/submit`, {
                 method: "POST",
                 headers: { "Authorization": `Bearer ${idToken}` },
                 body: formData
             });
-            
+
             if (!res.ok) throw new Error("Failed to submit solution.");
             const data = await res.json();
-            
+
             // Remove loading indicator
             loadingDiv.remove();
-            
+
             const gradeClass = data.is_correct ? "correct-panel" : "incorrect-panel";
             const gradeTextClass = data.is_correct ? "correct-text" : "incorrect-text";
             const gradeIcon = data.is_correct ? "fa-circle-check" : "fa-circle-xmark";
             const gradeTitle = data.is_correct ? "Goed gedaan!" : "Niet helemaal juist";
-            
+
             // Accordion for solution/explanation
             const expId = `exp-${Date.now()}`;
             const extraHtml = `
@@ -252,7 +252,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         <span>${gradeTitle}</span>
                     </div>
                     <p>${data.feedback}</p>
-                    
+
                     <div class="explanation-accordion">
                         <button class="explanation-trigger" onclick="document.getElementById('${expId}').classList.toggle('hidden'); this.classList.toggle('active')">
                             <i class="fa-solid fa-chevron-down"></i> Bekijk stapsgewijze uitleg
@@ -265,12 +265,12 @@ document.addEventListener("DOMContentLoaded", async () => {
                     </div>
                 </div>
             `;
-            
+
             appendMessage("coach", data.is_correct ? "Super! Je antwoord is helemaal correct." : "Ik heb je uitwerking nagekeken. Kijk eens hieronder naar de feedback en de uitleg om je te helpen:", null, extraHtml);
-            
+
             // Reload stats & progress
             loadStats();
-            
+
             if (data.is_correct) {
                 currentQuestion = null; // Reset current question after correct solve
                 const hintsContainer = document.getElementById("hints-container");
@@ -293,7 +293,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             const configRes = await fetch(`${API_BASE}/config`);
             if (!configRes.ok) throw new Error("Could not fetch Firebase configuration from backend API.");
             const firebaseConfig = await configRes.json();
-            
+
             if (!firebaseConfig.apiKey) {
                 // Config variables not filled in yet in .env
                 appendMessage("coach", "<strong>Configuratiefout:</strong> Firebase API sleutels missen in het <code>.env</code>-bestand van de backend. Vul deze in om in te loggen.");
@@ -306,28 +306,28 @@ document.addEventListener("DOMContentLoaded", async () => {
                 `;
                 return;
             }
-            
+
             // Initialize Firebase SDK
             firebase.initializeApp(firebaseConfig);
             auth = firebase.auth();
-            
+
             // Listen to auth state changes
             auth.onAuthStateChanged(async (user) => {
                 if (user) {
                     idToken = await user.getIdToken();
-                    
+
                     // Show dashboard
                     userEmailDisplay.textContent = user.email;
                     userProfileFooter.classList.remove("hidden");
                     authOverlay.classList.add("hidden");
-                    
+
                     // Toggle admin panel access link
                     if (user.email === "peter.backx@gmail.com") {
                         if (adminLinkContainer) adminLinkContainer.classList.remove("hidden");
                     } else {
                         if (adminLinkContainer) adminLinkContainer.classList.add("hidden");
                     }
-                    
+
                     // Load statistics
                     loadStats();
                 } else {
@@ -337,7 +337,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     if (adminLinkContainer) adminLinkContainer.classList.add("hidden");
                     const hintsContainer = document.getElementById("hints-container");
                     if (hintsContainer) hintsContainer.classList.add("hidden");
-                    
+
                     // Reset stats views
                     streakVal.textContent = "0";
                     solvedCount.textContent = "0";
@@ -351,7 +351,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                     `;
                 }
             });
-            
+
             // Google Sign-In button listener
             if (btnGoogleAuth) {
                 btnGoogleAuth.addEventListener("click", async () => {
@@ -373,29 +373,29 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
                 });
             }
-            
+
             // Logout button
             btnLogout.addEventListener("click", () => {
                 auth.signOut();
             });
-            
+
         } catch (err) {
             console.error("Firebase Auth Init Failed:", err);
             appendMessage("coach", "Fout bij laden authenticatie. Controleer netwerkverbinding.");
         }
     }
-    
+
     // Hint buttons click handlers
     const hintsContainer = document.getElementById("hints-container");
     if (hintsContainer) {
         hintsContainer.addEventListener("click", async (e) => {
             const btn = e.target.closest(".btn-hint");
             if (!btn || !currentQuestion || !idToken) return;
-            
+
             const hintType = btn.getAttribute("data-hint");
             let promptText = "";
             let chatText = "";
-            
+
             if (hintType === "klein") {
                 promptText = "Ik wil graag een kleine hint voor deze som.";
                 chatText = "💡 Ik wil graag een kleine hint.";
@@ -406,40 +406,40 @@ document.addEventListener("DOMContentLoaded", async () => {
                 promptText = "Geef me een soortgelijk voorbeeld met de uitwerking.";
                 chatText = "🔍 Kun je me een vergelijkbaar voorbeeld geven?";
             }
-            
+
             if (!promptText) return;
-            
+
             // Show student message in chat
             appendMessage("student", chatText);
-            
+
             // Loading state
             const loadingDiv = appendMessage("system-msg", "Coach typt een hint...");
-            
+
             // Disable input/buttons during request
             const btnSubmit = document.getElementById("btn-submit");
             btnSubmit.disabled = true;
             textInput.disabled = true;
-            
+
             // Submit to backend
             const formData = new FormData();
             formData.append("question_id", currentQuestion.id);
             formData.append("student_answer_text", promptText);
-            
+
             try {
                 const res = await fetch(`${API_BASE}/submit`, {
                     method: "POST",
                     headers: { "Authorization": `Bearer ${idToken}` },
                     body: formData
                 });
-                
+
                 if (!res.ok) throw new Error("Failed to get hint.");
                 const data = await res.json();
-                
+
                 loadingDiv.remove();
-                
+
                 // Show coach hint response
                 appendMessage("coach", data.feedback);
-                
+
             } catch (err) {
                 loadingDiv.remove();
                 appendMessage("coach", "Er ging iets mis bij het ophalen van de hint. Probeer het opnieuw.");
@@ -450,7 +450,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         });
     }
-    
+
     // Run initial load & setup
     initializeApp();
 });

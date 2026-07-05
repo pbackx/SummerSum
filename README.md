@@ -1,6 +1,6 @@
 # SummerSum - Your Personal Math Coach
 
-SummerSum is an interactive web application designed to help students transitioning from the 2nd to the 3rd year of secondary school practice math during the summer holidays. 
+SummerSum is an interactive web application designed to help students transitioning from the 2nd to the 3rd year of secondary school practice math during the summer holidays.
 
 The application automatically extracts math questions and corresponding solutions from PDF exercise books, displays a new question to the student every day, and offers active, stateful guidance from a personal AI math coach.
 

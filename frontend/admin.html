@@ -64,7 +64,7 @@
             margin-bottom: 24px;
             overflow-x: auto;
         }
-        
+
         /* Dashboard Custom Styles */
         .btn-sidebar {
             width: 100%;
@@ -91,11 +91,11 @@
             color: white;
             box-shadow: 0 0 15px var(--primary-glow);
         }
-        
+
         .hidden {
             display: none !important;
         }
-        
+
         /* Questions list item */
         .question-item {
             padding: 12px 16px;
@@ -118,13 +118,13 @@
             border-color: var(--primary);
             box-shadow: 0 0 10px rgba(79, 70, 229, 0.2);
         }
-        
+
         /* Cropper customizations */
         .cropper-container {
             border-radius: 8px;
             overflow: hidden;
         }
-        
+
         .tab-btn-crop {
             padding: 8px 16px;
             border-radius: 8px;
@@ -143,7 +143,7 @@
             color: white;
             box-shadow: 0 0 10px var(--primary-glow);
         }
-        
+
         /* Table Styles */
         .admin-table {
             width: 100%;
@@ -161,7 +161,7 @@
         .admin-table tbody tr:hover {
             background-color: rgba(255, 255, 255, 0.02);
         }
-        
+
         .btn-danger {
             background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
             color: white;
@@ -194,13 +194,13 @@
             <h2 id="card-title">Laden...</h2>
             <p id="card-desc">Controleert beheerderstoegang...</p>
             <div id="admin-data" class="admin-data-box hidden"></div>
-            
+
             <a href="/" class="btn btn-primary btn-block" style="display: inline-flex; justify-content: center; text-decoration: none; align-items: center; gap: 8px; width: 100%;">
                 <i class="fa-solid fa-arrow-left"></i> Terug naar Dashboard
             </a>
         </div>
     </div>
-    
+
     <!-- Main Admin Dashboard Container (Hidden by default) -->
     <div id="admin-dashboard" class="app-container hidden" style="width: 100vw; height: 100vh; max-width: none; border-radius: 0; border: none; background: rgba(17, 24, 39, 0.6); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); display: flex; overflow: hidden;">
         <!-- Sidebar -->
@@ -211,7 +211,7 @@
                     <span>Summer<span>Sum</span> Admin</span>
                 </div>
             </div>
-            
+
             <!-- Sidebar Navigation Menu -->
             <ul class="nav-menu" style="list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: auto; padding: 0;">
                 <li>
@@ -225,7 +225,7 @@
                     </button>
                 </li>
             </ul>
-            
+
             <!-- Sidebar Footer -->
             <div class="sidebar-footer" style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-glass);">
                 <a href="/" class="btn" style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; text-decoration: none; padding: 12px; border-radius: 12px; font-family: var(--font-heading); font-weight: 600; border: 1px solid var(--border-glass); color: var(--text-main); background: rgba(255,255,255,0.03);">
@@ -233,7 +233,7 @@
                 </a>
             </div>
         </div>
-        
+
         <!-- Main Content Area -->
         <div class="main-content" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 32px; background: var(--bg-chat);">
             <!-- Users Tab Content -->
@@ -257,7 +257,7 @@
                     </table>
                 </div>
             </div>
-            
+
             <!-- Questions Tab Content -->
             <div id="tab-questions" class="tab-content hidden" style="display: flex; flex-direction: row; height: 100%; overflow: hidden; gap: 24px;">
                 <!-- Questions List (Left column) -->
@@ -268,7 +268,7 @@
                         <!-- Filled dynamically -->
                     </div>
                 </div>
-                
+
                 <!-- Question Editor (Right column / middle) -->
                 <div id="question-editor" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                     <!-- Empty state -->
@@ -276,7 +276,7 @@
                         <i class="fa-solid fa-pen-to-square" style="font-size: 48px; margin-bottom: 16px; color: var(--text-muted); opacity: 0.5;"></i>
                         <p style="font-size: 15px;">Selecteer een vraag uit de lijst om deze te bewerken.</p>
                     </div>
-                    
+
                     <!-- Active Editor Form -->
                     <div id="editor-form-container" class="hidden" style="display: flex; flex-direction: column; height: 100%; overflow: hidden;">
                         <!-- Header with ID, Duplicate, Delete and Save button -->
@@ -294,7 +294,7 @@
                                 </button>
                             </div>
                         </div>
-                        
+
                         <!-- Editor Fields & Cropper -->
                         <div style="flex: 1; display: flex; flex-direction: row; gap: 24px; overflow: hidden;">
                             <!-- Text fields (Left) -->
@@ -343,7 +343,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <!-- Interactive Cropper (Right) -->
                             <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden; background: rgba(0,0,0,0.25); border: 1px solid var(--border-glass); border-radius: 16px; padding: 16px;">
                                 <!-- Tabs to switch between Question and Solution crop -->
@@ -355,7 +355,7 @@
                                         Oplossing Bounding Box
                                     </button>
                                 </div>
-                                
+
                                 <!-- Bounding Box Info -->
                                 <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center;">
                                     <span>Sleep en schaal de uitsnede hieronder op de originele pagina (pagina <span id="cropper-page-num"></span>).</span>
@@ -363,7 +363,7 @@
                                         <button id="btn-reset-crop" class="btn" style="padding: 4px 8px; font-size: 11px; border-radius: 6px; border: 1px solid var(--border-glass); color: var(--text-muted); cursor: pointer; background: rgba(255,255,255,0.02);"><i class="fa-solid fa-rotate-left"></i> Reset selectie</button>
                                     </div>
                                 </div>
-                                
+
                                 <!-- Image Cropper Container -->
                                 <div style="flex: 1; display: flex; justify-content: center; align-items: center; overflow: hidden; position: relative; border-radius: 8px; background: #000; border: 1px solid var(--border-glass);">
                                     <img id="cropper-target-img" crossorigin="anonymous" style="max-width: 100%; max-height: 100%; display: block;" src="" alt="Target voor cropper">
@@ -391,18 +391,18 @@
             const cardTitle = document.getElementById("card-title");
             const cardDesc = document.getElementById("card-desc");
             const adminData = document.getElementById("admin-data");
-            
+
             const adminDashboard = document.getElementById("admin-dashboard");
             const btnNavUsers = document.getElementById("btn-nav-users");
             const btnNavQuestions = document.getElementById("btn-nav-questions");
             const tabUsers = document.getElementById("tab-users");
             const tabQuestions = document.getElementById("tab-questions");
-            
+
             const questionsListContainer = document.getElementById("questions-list-container");
             const questionSearch = document.getElementById("question-search");
             const editorEmptyState = document.getElementById("editor-empty-state");
             const editorFormContainer = document.getElementById("editor-form-container");
-            
+
             const editorQuestionId = document.getElementById("editor-question-id");
             const editPage = document.getElementById("edit-page");
             const editQuestionId = document.getElementById("edit-question-id");
@@ -412,7 +412,7 @@
             const editDifficulty = document.getElementById("edit-difficulty");
             const currentQImg = document.getElementById("current-q-img");
             const currentSolImg = document.getElementById("current-sol-img");
-            
+
             const btnCropQ = document.getElementById("btn-crop-q");
             const btnCropSol = document.getElementById("btn-crop-sol");
             const cropperPageNum = document.getElementById("cropper-page-num");
@@ -423,7 +423,7 @@
             const btnSaveQuestion = document.getElementById("btn-save-question");
 
             const API_BASE = window.location.origin + "/api";
-            
+
             // App state
             let idToken = null;
             let auth = null;
@@ -432,43 +432,43 @@
             let cropper = null;
             let currentCropTarget = "question"; // "question" or "solution"
             let cropperReady = false;
-            
+
             try {
                 // Fetch configuration
                 const configRes = await fetch(`${API_BASE}/config`);
                 if (!configRes.ok) throw new Error("Backend API configuratiefout.");
                 const firebaseConfig = await configRes.json();
-                
+
                 // Initialize Firebase
                 firebase.initializeApp(firebaseConfig);
                 auth = firebase.auth();
-                
+
                 auth.onAuthStateChanged(async (user) => {
                     if (user) {
                         if (user.email !== "peter.backx@gmail.com") {
                             showOverlayError("Toegang Geweigerd", "Je bent ingelogd als " + user.email + ". Alleen peter.backx@gmail.com heeft toegang tot dit beheerderspaneel.");
                             return;
                         }
-                        
+
                         try {
                             idToken = await user.getIdToken();
-                            
+
                             // Verify with backend
                             const dataRes = await fetch(`${API_BASE}/admin/data`, {
                                 headers: { "Authorization": `Bearer ${idToken}` }
                             });
-                            
+
                             if (dataRes.status === 403) {
                                 showOverlayError("Toegang Geweigerd (Backend)", "De server heeft toegang geweigerd voor jouw account.");
                                 return;
                             } else if (!dataRes.ok) {
                                 throw new Error("Fout bij ophalen backend data.");
                             }
-                            
+
                             // Verification successful! Load admin dashboard
                             statusOverlay.classList.add("hidden");
                             adminDashboard.classList.remove("hidden");
-                            
+
                             // Load initial views
                             loadUsers();
                             loadQuestions();
@@ -482,7 +482,7 @@
             } catch (err) {
                 showOverlayError("Verbindingsfout", "Kan geen verbinding maken met de backend server: " + err.message);
             }
-            
+
             function showOverlayError(title, desc) {
                 cardIcon.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i>';
                 cardIcon.className = "admin-icon error";
@@ -490,7 +490,7 @@
                 cardDesc.textContent = desc;
                 adminData.classList.add("hidden");
             }
-            
+
             // Tab navigation
             btnNavUsers.addEventListener("click", () => {
                 btnNavUsers.classList.add("active");
@@ -499,32 +499,32 @@
                 tabQuestions.classList.add("hidden");
                 loadUsers();
             });
-            
+
             btnNavQuestions.addEventListener("click", () => {
                 btnNavQuestions.classList.add("active");
                 btnNavUsers.classList.remove("active");
                 tabQuestions.classList.remove("hidden");
                 tabUsers.classList.add("hidden");
             });
-            
+
             // Fetch users list
             async function loadUsers() {
                 const tbody = document.getElementById("users-table-body");
                 tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;"><i class="fa-solid fa-circle-notch fa-spin"></i> Laden...</td></tr>`;
-                
+
                 try {
                     const res = await fetch(`${API_BASE}/admin/users`, {
                         headers: { "Authorization": `Bearer ${idToken}` }
                     });
                     if (!res.ok) throw new Error("Fout bij laden van gebruikers.");
                     const users = await res.json();
-                    
+
                     tbody.innerHTML = "";
                     if (users.length === 0) {
                         tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 30px;">Geen geregistreerde gebruikers gevonden.</td></tr>`;
                         return;
                     }
-                    
+
                     users.forEach(user => {
                         const tr = document.createElement("tr");
                         tr.innerHTML = `
@@ -544,7 +544,7 @@
                     tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--incorrect); padding: 30px;"><i class="fa-solid fa-circle-exclamation"></i> ${err.message}</td></tr>`;
                 }
             }
-            
+
             // Fetch questions list
             async function loadQuestions() {
                 try {
@@ -553,7 +553,7 @@
                     });
                     if (!res.ok) throw new Error("Fout bij laden van vragen.");
                     allQuestions = await res.json();
-                    
+
                     // Sort questions naturally by page and then question_id
                     allQuestions.sort((a, b) => {
                         if (a.page !== b.page) {
@@ -561,21 +561,21 @@
                         }
                         return a.question_id.localeCompare(b.question_id, undefined, { numeric: true, sensitivity: 'base' });
                     });
-                    
+
                     renderQuestionsList(allQuestions);
                 } catch (err) {
                     console.error(err);
                     questionsListContainer.innerHTML = `<div style="color: var(--incorrect); text-align: center; padding: 20px;"><i class="fa-solid fa-circle-exclamation"></i> Fout bij laden vragen.</div>`;
                 }
             }
-            
+
             function renderQuestionsList(questions) {
                 questionsListContainer.innerHTML = "";
                 if (questions.length === 0) {
                     questionsListContainer.innerHTML = `<div style="color: var(--text-muted); text-align: center; padding: 20px;">Geen vragen gevonden.</div>`;
                     return;
                 }
-                
+
                 questions.forEach(q => {
                     const item = document.createElement("div");
                     item.className = `question-item ${selectedQuestion && selectedQuestion.id === q.id ? 'active' : ''}`;
@@ -595,26 +595,26 @@
                     questionsListContainer.appendChild(item);
                 });
             }
-            
+
             // Search filter
             questionSearch.addEventListener("input", () => {
                 const query = questionSearch.value.toLowerCase().trim();
-                const filtered = allQuestions.filter(q => 
-                    q.id.toLowerCase().includes(query) || 
-                    q.topic.toLowerCase().includes(query) || 
+                const filtered = allQuestions.filter(q =>
+                    q.id.toLowerCase().includes(query) ||
+                    q.topic.toLowerCase().includes(query) ||
                     (q.main_instruction && q.main_instruction.toLowerCase().includes(query)) ||
                     (q.text_nl && q.text_nl.toLowerCase().includes(query))
                 );
                 renderQuestionsList(filtered);
             });
-            
+
             // Select question for editing
             function selectQuestion(q) {
                 // Save coordinates of current cropper if any before switching
                 saveCurrentCropState();
-                
+
                 selectedQuestion = JSON.parse(JSON.stringify(q)); // Deep copy
-                
+
                 // Active status in list
                 Array.from(questionsListContainer.children).forEach((child, i) => {
                     const idStr = child.querySelector("span").textContent;
@@ -624,11 +624,11 @@
                         child.classList.remove("active");
                     }
                 });
-                
+
                 // Show form
                 editorEmptyState.classList.add("hidden");
                 editorFormContainer.classList.remove("hidden");
-                
+
                 // Populate fields
                 editorQuestionId.textContent = q.id;
                 editPage.value = q.page;
@@ -637,41 +637,41 @@
                 editInstruction.value = q.main_instruction || "";
                 editText.value = q.text_nl || "";
                 editDifficulty.value = q.difficulty;
-                
+
                 cropperPageNum.textContent = q.page;
-                
+
                 // Render current cropped previews
                 const tParam = `?t=${Date.now()}`;
                 currentQImg.src = (q.question_image_url || `/${q.question_image}`) + tParam;
                 currentSolImg.src = (q.solution_image_url || `/${q.solution_image}`) + tParam;
-                
+
                 // Default to Question tab
                 currentCropTarget = "question";
                 btnCropQ.classList.add("active");
                 btnCropSol.classList.remove("active");
-                
+
                 // Load image into cropper
                 loadCropperImage();
             }
-            
+
             function loadCropperImage() {
                 if (cropper) {
                     cropper.destroy();
                     cropper = null;
                 }
                 cropperReady = false;
-                
+
                 // Use local relative path to avoid GCS CORS issues and reduce latency
-                const imageUrl = currentCropTarget === "question" 
-                    ? `/data/questions/page_${selectedQuestion.page}_task.png` 
+                const imageUrl = currentCropTarget === "question"
+                    ? `/data/questions/page_${selectedQuestion.page}_task.png`
                     : `/data/questions/page_${selectedQuestion.page}_key.png`;
-                
+
                 cropperTargetImg.src = imageUrl;
-                
+
                 // We must wait for image to load before initializing Cropper
                 cropperTargetImg.onload = () => {
                     if (cropper) return; // Prevent double init
-                    
+
                     cropper = new Cropper(cropperTargetImg, {
                         viewMode: 1,
                         dragMode: 'move',
@@ -691,17 +691,17 @@
                     });
                 };
             }
-            
+
             function resetToSavedBox() {
                 if (!cropper || !cropperReady) return;
-                
+
                 const box = currentCropTarget === "question"
                     ? selectedQuestion.question_box
                     : selectedQuestion.solution_box;
-                
+
                 // Convert point coordinates to pixel coordinates (150 DPI / 72 Points per inch)
                 const scale = 150.0 / 72.0;
-                
+
                 cropper.setData({
                     x: box.xmin * scale,
                     y: box.ymin * scale,
@@ -709,27 +709,27 @@
                     height: (box.ymax - box.ymin) * scale
                 });
             }
-            
+
             function saveCurrentCropState() {
                 if (!cropper || !cropperReady || !selectedQuestion) return;
-                
+
                 const data = cropper.getData();
                 const scale = 150.0 / 72.0;
-                
+
                 const box = {
                     xmin: data.x / scale,
                     ymin: data.y / scale,
                     xmax: (data.x + data.width) / scale,
                     ymax: (data.y + data.height) / scale
                 };
-                
+
                 if (currentCropTarget === "question") {
                     selectedQuestion.question_box = box;
                 } else {
                     selectedQuestion.solution_box = box;
                 }
             }
-            
+
             // Switch crop target (Question vs Solution)
             btnCropQ.addEventListener("click", () => {
                 if (currentCropTarget === "question") return;
@@ -739,7 +739,7 @@
                 btnCropSol.classList.remove("active");
                 loadCropperImage();
             });
-            
+
             btnCropSol.addEventListener("click", () => {
                 if (currentCropTarget === "solution") return;
                 saveCurrentCropState();
@@ -748,12 +748,12 @@
                 btnCropQ.classList.remove("active");
                 loadCropperImage();
             });
-            
+
             // Reset button
             btnResetCrop.addEventListener("click", () => {
                 resetToSavedBox();
             });
-            
+
             // Page change listener to reload cropper image dynamically
             editPage.addEventListener("change", () => {
                 const newPage = parseInt(editPage.value);
@@ -764,29 +764,29 @@
                     loadCropperImage();
                 }
             });
-            
+
             // Duplicate Question details
             btnDuplicateQuestion.addEventListener("click", async () => {
                 if (!selectedQuestion) return;
-                
+
                 const newId = prompt("Voer een nieuwe unieke ID in voor de gedupliceerde vraag (bijv. p2_1a_kopie):");
                 if (newId === null) return; // User cancelled
-                
+
                 const trimmedId = newId.trim();
                 if (!trimmedId) {
                     alert("ID mag niet leeg zijn.");
                     return;
                 }
-                
+
                 if (allQuestions.some(q => q.id.toLowerCase() === trimmedId.toLowerCase())) {
                     alert(`Een vraag met ID '${trimmedId}' bestaat al.`);
                     return;
                 }
-                
+
                 btnDuplicateQuestion.disabled = true;
                 const originalText = btnDuplicateQuestion.innerHTML;
                 btnDuplicateQuestion.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Dupliceren...';
-                
+
                 try {
                     const res = await fetch(`${API_BASE}/admin/questions/duplicate`, {
                         method: "POST",
@@ -799,18 +799,18 @@
                             new_id: trimmedId
                         })
                     });
-                    
+
                     if (!res.ok) {
                         const errData = await res.json();
                         throw new Error(errData.detail || "Fout bij dupliceren van vraag.");
                     }
-                    
+
                     const resData = await res.json();
                     alert("Vraag succesvol gedupliceerd!");
-                    
+
                     // Add to cache list
                     allQuestions.push(resData.question);
-                    
+
                     // Sort list again
                     allQuestions.sort((a, b) => {
                         if (a.page !== b.page) {
@@ -818,10 +818,10 @@
                         }
                         return a.question_id.localeCompare(b.question_id, undefined, { numeric: true, sensitivity: 'base' });
                     });
-                    
+
                     // Re-render
                     renderQuestionsList(allQuestions);
-                    
+
                     // Select new question
                     selectQuestion(resData.question);
                 } catch (err) {
@@ -831,19 +831,19 @@
                     btnDuplicateQuestion.innerHTML = originalText;
                 }
             });
-            
+
             // Delete Question details
             btnDeleteQuestion.addEventListener("click", async () => {
                 if (!selectedQuestion) return;
-                
+
                 if (!confirm(`Weet je zeker dat je vraag '${selectedQuestion.id}' wilt verwijderen? Dit kan niet ongedaan worden gemaakt.`)) {
                     return;
                 }
-                
+
                 btnDeleteQuestion.disabled = true;
                 const originalText = btnDeleteQuestion.innerHTML;
                 btnDeleteQuestion.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verwijderen...';
-                
+
                 try {
                     const res = await fetch(`${API_BASE}/admin/questions/${selectedQuestion.id}`, {
                         method: "DELETE",
@@ -851,24 +851,24 @@
                             "Authorization": `Bearer ${idToken}`
                         }
                     });
-                    
+
                     if (!res.ok) {
                         const errData = await res.json();
                         throw new Error(errData.detail || "Fout bij verwijderen van vraag.");
                     }
-                    
+
                     alert("Vraag succesvol verwijderd!");
-                    
+
                     // Remove from cache list
                     allQuestions = allQuestions.filter(q => q.id !== selectedQuestion.id);
-                    
+
                     // Clear selected question
                     selectedQuestion = null;
-                    
+
                     // Hide editor form, show empty state
                     editorFormContainer.classList.add("hidden");
                     editorEmptyState.classList.remove("hidden");
-                    
+
                     // Re-render
                     renderQuestionsList(allQuestions);
                 } catch (err) {
@@ -878,18 +878,18 @@
                     btnDeleteQuestion.innerHTML = originalText;
                 }
             });
-            
+
             // Save Question details
             btnSaveQuestion.addEventListener("click", async () => {
                 if (!selectedQuestion) return;
-                
+
                 // Save active crop state first
                 saveCurrentCropState();
-                
+
                 btnSaveQuestion.disabled = true;
                 const originalText = btnSaveQuestion.innerHTML;
                 btnSaveQuestion.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Bezig met opslaan...';
-                
+
                 const payload = {
                     page: parseInt(editPage.value),
                     question_id: editQuestionId.value.trim(),
@@ -910,7 +910,7 @@
                         ymax: selectedQuestion.solution_box.ymax
                     }
                 };
-                
+
                 try {
                     const res = await fetch(`${API_BASE}/admin/questions/${selectedQuestion.id}`, {
                         method: "PUT",
@@ -920,15 +920,15 @@
                         },
                         body: JSON.stringify(payload)
                     });
-                    
+
                     if (!res.ok) {
                         const errData = await res.json();
                         throw new Error(errData.detail || "Fout bij opslaan van vraag.");
                     }
-                    
+
                     // Success!
                     alert("Vraag succesvol opgeslagen en opnieuw uitgesneden!");
-                    
+
                     // Update cache in list
                     const idx = allQuestions.findIndex(q => q.id === selectedQuestion.id);
                     if (idx !== -1) {
@@ -941,13 +941,13 @@
                             solution_image_url: `${allQuestions[idx].solution_image_url || '/' + allQuestions[idx].solution_image}`
                         };
                     }
-                    
+
                     // Refresh rendering list
                     renderQuestionsList(allQuestions);
-                    
+
                     // Re-select to update preview images
                     selectQuestion(allQuestions[idx]);
-                    
+
                 } catch (err) {
                     alert("Kan wijzigingen niet opslaan: " + err.message);
                 } finally {
@@ -955,7 +955,7 @@
                     btnSaveQuestion.innerHTML = originalText;
                 }
             });
-            
+
             // Handle window resize dynamically to adjust Cropper.js and restore selection instantly
             window.addEventListener("resize", () => {
                 if (cropper && selectedQuestion) {

@@ -50,7 +50,7 @@ def startup_event():
     global remote_agent
     # Migrate questions to Firestore if collection is empty
     firebase_db.migrate_questions_to_firestore()
-    
+
     # Load remote Reasoning Engine ID from deployment_metadata.json
     try:
         metadata_path = "deployment_metadata.json"
@@ -72,7 +72,7 @@ def get_current_user(authorization: Optional[str] = Header(None)) -> str:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing or invalid Authorization header"
         )
-    
+
     token = authorization.replace("Bearer ", "").strip()
     try:
         decoded_token = auth.verify_id_token(token)
@@ -89,7 +89,7 @@ def get_admin_user(authorization: Optional[str] = Header(None)) -> str:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing or invalid Authorization header"
         )
-    
+
     token = authorization.replace("Bearer ", "").strip()
     try:
         decoded_token = auth.verify_id_token(token)
@@ -128,10 +128,10 @@ def get_admin_users(user_id: str = Depends(get_admin_user)):
             uid = user.uid
             email = user.email
             display_name = user.display_name or email
-            
+
             # Fetch stats
             stats = firebase_db.get_student_stats(uid)
-            
+
             users_list.append({
                 "uid": uid,
                 "email": email,
@@ -176,7 +176,7 @@ def crop_and_upload_question_images(question_id: str, page_num: int, question_bo
         local_path = f"data/questions/page_{page}_{suffix}.png"
         if os.path.exists(local_path):
             return Image.open(local_path)
-            
+
         # Fallback: Download from GCS
         try:
             bucket = storage.bucket(os.getenv("FIREBASE_STORAGE_BUCKET"))
@@ -187,7 +187,7 @@ def crop_and_upload_question_images(question_id: str, page_num: int, question_bo
         except Exception as e:
             print(f"Error downloading page image from GCS: {e}")
             raise HTTPException(status_code=500, detail=f"Could not retrieve full page image for page {page} ({suffix}): {str(e)}")
-            
+
     # Helper to crop image using points coordinates (converted to 150 DPI pixels)
     def crop_image(img: Image.Image, box: BoundingBoxModel) -> Image.Image:
         scale = 150.0 / 72.0
@@ -195,18 +195,18 @@ def crop_and_upload_question_images(question_id: str, page_num: int, question_bo
         ymin = int(box.ymin * scale)
         xmax = int(box.xmax * scale)
         ymax = int(box.ymax * scale)
-        
+
         width, height = img.size
         xmin = max(0, min(xmin, width))
         xmax = max(0, min(xmax, width))
         ymin = max(0, min(ymin, height))
         ymax = max(0, min(ymax, height))
-        
+
         if xmax <= xmin: xmax = min(xmin + 10, width)
         if ymax <= ymin: ymax = min(ymin + 10, height)
-        
+
         return img.crop((xmin, ymin, xmax, ymax))
-        
+
     # Helper to upload to GCS
     def upload_bytes_to_gcs(img: Image.Image, remote_path: str):
         try:
@@ -225,21 +225,21 @@ def crop_and_upload_question_images(question_id: str, page_num: int, question_bo
     # Re-crop images
     q_img = get_page_image(page_num, is_key=False)
     cropped_q = crop_image(q_img, question_box)
-    
+
     sol_img = get_page_image(page_num, is_key=True)
     cropped_sol = crop_image(sol_img, solution_box)
-    
+
     # Save locally
     os.makedirs("data/questions", exist_ok=True)
     q_local_path = f"data/questions/question_{question_id}.png"
     sol_local_path = f"data/questions/solution_{question_id}.png"
     cropped_q.save(q_local_path)
     cropped_sol.save(sol_local_path)
-    
+
     # Upload to GCS
     q_url, q_gcs = upload_bytes_to_gcs(cropped_q, f"questions/question_{question_id}.png")
     sol_url, sol_gcs = upload_bytes_to_gcs(cropped_sol, f"questions/solution_{question_id}.png")
-    
+
     return q_local_path, sol_local_path, q_url, q_gcs, sol_url, sol_gcs
 
 @app.put("/api/admin/questions/{question_id}")
@@ -251,7 +251,7 @@ async def update_question(
     question = firebase_db.get_question(question_id)
     if not question:
         raise HTTPException(status_code=404, detail="Question not found")
-        
+
     try:
         # Re-crop images using helper
         q_local, sol_local, q_url, q_gcs, sol_url, sol_gcs = crop_and_upload_question_images(
@@ -260,7 +260,7 @@ async def update_question(
             update_data.question_box,
             update_data.solution_box
         )
-        
+
         # Construct dynamic page task/key image fields
         task_page_url = f"https://storage.googleapis.com/summersum-agent-dev.firebasestorage.app/pages/page_{update_data.page}_task.png"
         task_page_gcs = f"gs://summersum-agent-dev.firebasestorage.app/pages/page_{update_data.page}_task.png"
@@ -292,7 +292,7 @@ async def update_question(
             "key_page_image_url": key_page_url,
             "key_page_image_gcs": key_page_gcs
         }
-        
+
         if q_url:
             updated_fields["question_image_url"] = q_url
             updated_fields["question_image_gcs"] = q_gcs
@@ -301,29 +301,29 @@ async def update_question(
             updated_fields["solution_image_url"] = sol_url
             updated_fields["solution_image_gcs"] = sol_gcs
             updated_fields["solution_image"] = sol_local
-            
+
         # Save in Firestore
         firebase_db.db.collection("questions").document(question_id).update(updated_fields)
-        
+
         # Update local database.json to keep it in sync
         db_path = "data/database.json"
         if os.path.exists(db_path):
             try:
                 with open(db_path, "r", encoding="utf-8") as f:
                     questions = json.load(f)
-                
+
                 for q in questions:
                     if q["id"] == question_id:
                         q.update(updated_fields)
                         break
-                        
+
                 with open(db_path, "w", encoding="utf-8") as f:
                     json.dump(questions, f, indent=2, ensure_ascii=False)
             except Exception as e:
                 print(f"Warning: Failed to update local database.json: {e}")
-                
+
         return {"status": "success", "message": f"Question {question_id} updated successfully."}
-        
+
     except Exception as e:
         print(f"Error updating question: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to update question: {str(e)}")
@@ -335,24 +335,24 @@ async def duplicate_question(
 ):
     source_id = data.source_id.strip()
     new_id = data.new_id.strip()
-    
+
     if not source_id or not new_id:
         raise HTTPException(status_code=400, detail="Source ID and New ID cannot be empty.")
-        
+
     existing = firebase_db.get_question(new_id)
     if existing:
         raise HTTPException(status_code=400, detail=f"Vraag met ID '{new_id}' bestaat al.")
-        
+
     source_question = firebase_db.get_question(source_id)
     if not source_question:
         raise HTTPException(status_code=404, detail="Source question not found")
-        
+
     try:
         q_box_model = BoundingBoxModel(**source_question["question_box"])
         sol_box_model = BoundingBoxModel(**source_question["solution_box"])
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Invalid bounding box in source question: {str(e)}")
-        
+
     try:
         q_local, sol_local, q_url, q_gcs, sol_url, sol_gcs = crop_and_upload_question_images(
             new_id,
@@ -362,7 +362,7 @@ async def duplicate_question(
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate cropped images for duplicate: {str(e)}")
-        
+
     new_question = {
         "id": new_id,
         "page": source_question["page"],
@@ -384,25 +384,25 @@ async def duplicate_question(
         "key_page_image_url": source_question.get("key_page_image_url"),
         "key_page_image_gcs": source_question.get("key_page_image_gcs")
     }
-    
+
     try:
         firebase_db.create_question(new_id, new_question)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save duplicated question to Firestore: {str(e)}")
-        
+
     db_path = "data/database.json"
     if os.path.exists(db_path):
         try:
             with open(db_path, "r", encoding="utf-8") as f:
                 questions = json.load(f)
-            
+
             questions.append(new_question)
-            
+
             with open(db_path, "w", encoding="utf-8") as f:
                 json.dump(questions, f, indent=2, ensure_ascii=False)
         except Exception as e:
             print(f"Warning: Failed to update local database.json on duplicate: {e}")
-            
+
     return {"status": "success", "message": f"Question {source_id} duplicated successfully.", "question": new_question}
 
 @app.delete("/api/admin/questions/{question_id}")
@@ -413,12 +413,12 @@ async def delete_question(
     question = firebase_db.get_question(question_id)
     if not question:
         raise HTTPException(status_code=404, detail="Question not found")
-        
+
     try:
         firebase_db.delete_question(question_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete question from Firestore: {str(e)}")
-        
+
     q_local_path = f"data/questions/question_{question_id}.png"
     sol_local_path = f"data/questions/solution_{question_id}.png"
     if os.path.exists(q_local_path):
@@ -431,20 +431,20 @@ async def delete_question(
             os.remove(sol_local_path)
         except Exception as e:
             print(f"Failed to delete local solution image: {e}")
-            
+
     db_path = "data/database.json"
     if os.path.exists(db_path):
         try:
             with open(db_path, "r", encoding="utf-8") as f:
                 questions = json.load(f)
-            
+
             questions = [q for q in questions if q["id"] != question_id]
-            
+
             with open(db_path, "w", encoding="utf-8") as f:
                 json.dump(questions, f, indent=2, ensure_ascii=False)
         except Exception as e:
             print(f"Warning: Failed to update local database.json on delete: {e}")
-            
+
     return {"status": "success", "message": f"Question {question_id} deleted successfully."}
 
 
@@ -473,17 +473,17 @@ async def get_next_question(user_id: str = Depends(get_current_user)):
     question = firebase_db.get_next_question_for_user(user_id)
     if not question:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, 
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="No questions found in database. Run extraction first."
         )
-    
+
     # Initialize the ADK session for the math coach
     session_id = f"session_{user_id}"
     try:
         await session_service.delete_session(app_name="app", user_id=user_id, session_id=session_id)
     except Exception:
         pass
-        
+
     remote_session_id = None
     if remote_agent:
         try:
@@ -515,7 +515,7 @@ async def get_next_question(user_id: str = Depends(get_current_user)):
             "status": "active"
         }
     )
-    
+
     return question
 
 @app.post("/api/submit")
@@ -528,17 +528,17 @@ async def submit_solution(
     question = firebase_db.get_question(question_id)
     if not question:
         raise HTTPException(status_code=404, detail="Question not found")
-        
+
     session_id = f"session_{user_id}"
     session = await session_service.get_session(app_name="app", user_id=user_id, session_id=session_id)
-    
+
     # If session doesn't exist or is for a different question, initialize it
     if not session or session.state.get("current_question_id") != question_id:
         try:
             await session_service.delete_session(app_name="app", user_id=user_id, session_id=session_id)
         except Exception:
             pass
-            
+
         remote_session_id = None
         if remote_agent:
             try:
@@ -570,7 +570,7 @@ async def submit_solution(
                 "status": "active"
             }
         )
-        
+
     # Build user message parts
     message_parts = []
     if student_answer_text:
@@ -578,13 +578,13 @@ async def submit_solution(
     if student_answer_file:
         file_bytes = await student_answer_file.read()
         message_parts.append(types.Part.from_bytes(data=file_bytes, mime_type="image/png"))
-        
+
     new_message = types.Content(role="user", parts=message_parts)
-    
+
     coach_response = ""
     remote_session_id = session.state.get("remote_session_id")
     is_correct = False
-    
+
     if remote_agent and remote_session_id:
         print(f"Sending message to remote Vertex AI agent (session: {remote_session_id})")
         try:
@@ -606,7 +606,7 @@ async def submit_solution(
                         for part in content.parts:
                             if hasattr(part, "text") and part.text:
                                 coach_response += part.text
-                                
+
             # Get remote session state to check correctness status
             remote_sess = await remote_agent.async_get_session(user_id=user_id, session_id=remote_session_id)
             remote_state = remote_sess.get("state", {}) if isinstance(remote_sess, dict) else getattr(remote_sess, "state", {})
@@ -614,7 +614,7 @@ async def submit_solution(
         except Exception as e:
             print(f"Error querying remote agent: {e}")
             coach_response = ""
-            
+
     if not coach_response:
         print("Using fallback local runner execution.")
         runner = Runner(agent=math_coach_agent, app_name="app", session_service=session_service)
@@ -625,15 +625,15 @@ async def submit_solution(
         ):
             if event.is_final_response() and event.content and event.content.parts:
                 coach_response = "".join(part.text for part in event.content.parts if part.text)
-                
+
         session = await session_service.get_session(app_name="app", user_id=user_id, session_id=session_id)
         is_correct = (session.state.get("status") == "correct")
-    
+
     explanation_text = ""
     if is_correct:
         # Save solution to database
         streak = firebase_db.submit_user_solution(user_id, question_id, is_correct=True)
-        
+
         # Generate the step-by-step correct solution explanation using Gemini
         sol_gcs_uri = session.state.get("solution_image_gcs")
         if sol_gcs_uri:
@@ -655,7 +655,7 @@ async def submit_solution(
         # If incorrect, get current streak without updating progress
         stats = firebase_db.get_student_stats(user_id)
         streak = stats.get("streak", 0)
-        
+
     return {
         "question_id": question_id,
         "is_correct": is_correct,

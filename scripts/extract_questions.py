@@ -54,7 +54,7 @@ PAGE_MAPPING = {
 
 def analyze_page_with_gemini(client, page_img_bytes, page_num):
     print(f"Calling Gemini to analyze page {page_num}...")
-    
+
     prompt = """
     Analyze this page from a 3rd-year math exercise book.
     Identify all individual sub-questions (like 1a, 1b, 2a, 3b, 10, 11a) on this page.
@@ -66,16 +66,16 @@ def analyze_page_with_gemini(client, page_img_bytes, page_num):
     5. The main instruction of this section (e.g., 'Werk uit.', 'Herleid volgende veeltermen.', 'Bereken.'). This is usually a heading or line of text above the question list.
     6. The math topic.
     7. An estimated difficulty ('easy', 'medium', 'hard').
-    
+
     Coordinates must be integer values normalized to [0, 1000] where [0,0] is top-left and [1000, 1000] is bottom-right.
     """
-    
+
     # Create Part from bytes
     image_part = types.Part.from_bytes(
         data=page_img_bytes,
         mime_type="image/png"
     )
-    
+
     response = client.models.generate_content(
         model='gemini-2.5-flash',
         contents=[image_part, prompt],
@@ -85,7 +85,7 @@ def analyze_page_with_gemini(client, page_img_bytes, page_num):
             temperature=0.1
         ),
     )
-    
+
     # Parse response text back to dict/Pydantic
     try:
         data = json.loads(response.text)
@@ -105,31 +105,31 @@ def get_overlap_area(r1, r2):
 def get_distance(r, box_pts):
     bx0, by0, bx1, by1 = r
     xmin, ymin, xmax, ymax = box_pts
-    
+
     y_dist = 0.0
     if by1 < ymin:
         y_dist = ymin - by1
     elif by0 > ymax:
         y_dist = by0 - ymax
-        
+
     x_dist = 0.0
     if bx1 < xmin:
         x_dist = xmin - bx1
     elif bx0 > xmax:
         x_dist = bx0 - xmax
-        
+
     return x_dist, y_dist
 
 def refine_box(page, box_norm, is_solution=False, other_box_norm=None):
     w_pts = page.rect.width
     h_pts = page.rect.height
-    
+
     xmin = box_norm['xmin'] * w_pts / 1000.0
     ymin = box_norm['ymin'] * h_pts / 1000.0
     xmax = box_norm['xmax'] * w_pts / 1000.0
     ymax = box_norm['ymax'] * h_pts / 1000.0
     target_rect = (xmin, ymin, xmax, ymax)
-    
+
     if other_box_norm:
         oxmin = other_box_norm['xmin'] * w_pts / 1000.0
         oymin = other_box_norm['ymin'] * h_pts / 1000.0
@@ -138,26 +138,26 @@ def refine_box(page, box_norm, is_solution=False, other_box_norm=None):
         other_rect = (oxmin, oymin, oxmax, oymax)
     else:
         other_rect = None
-        
+
     blocks = page.get_text("blocks")
     matching_blocks = []
-    
+
     for b in blocks:
         bx0, by0, bx1, by1, btext, bnum, btype = b
         btext = btext.strip()
         if not btext:
             continue
-            
+
         block_rect = (bx0, by0, bx1, by1)
-        
+
         # Calculate overlap areas
         overlap_target = get_overlap_area(block_rect, target_rect)
         overlap_other = get_overlap_area(block_rect, other_rect) if other_rect else 0.0
-        
+
         # Calculate distances
         x_dist_target, y_dist_target = get_distance(block_rect, target_rect)
         x_dist_other, y_dist_other = get_distance(block_rect, other_rect) if other_rect else (999.0, 999.0)
-        
+
         # Is this block closer/more related to target_rect than other_rect?
         if other_rect:
             if overlap_other > overlap_target:
@@ -167,17 +167,17 @@ def refine_box(page, box_norm, is_solution=False, other_box_norm=None):
                 dist_other = x_dist_other + y_dist_other
                 if dist_other < dist_target:
                     continue
-                    
+
         # Apply thresholds to the target: vertical < 30, horizontal < 30
         if y_dist_target < 30 and x_dist_target < 30:
             matching_blocks.append(b)
-            
+
     if matching_blocks:
         ux0 = min(b[0] for b in matching_blocks)
         uy0 = min(b[1] for b in matching_blocks)
         ux1 = max(b[2] for b in matching_blocks)
         uy1 = max(b[3] for b in matching_blocks)
-        
+
         # Add padding in points
         if is_solution:
             pad_x = 5
@@ -185,12 +185,12 @@ def refine_box(page, box_norm, is_solution=False, other_box_norm=None):
         else:
             pad_x = 10
             pad_y = 5
-            
+
         ux0 = max(0.0, ux0 - pad_x)
         uy0 = max(0.0, uy0 - pad_y)
         ux1 = min(w_pts, ux1 + pad_x)
         uy1 = min(h_pts, uy1 + pad_y)
-        
+
         return {"xmin": ux0, "ymin": uy0, "xmax": ux1, "ymax": uy1}
     else:
         # Fallback with generous padding
@@ -214,27 +214,27 @@ def crop_and_save_pts(img, box_pts, output_path, scale=150.0/72.0):
     ymin = int(box_pts['ymin'] * scale)
     xmax = int(box_pts['xmax'] * scale)
     ymax = int(box_pts['ymax'] * scale)
-    
+
     width, height = img.size
-    
+
     if xmax <= xmin: xmax = min(xmin + 10, width)
     if ymax <= ymin: ymax = min(ymin + 10, height)
-    
+
     xmin = max(0, min(xmin, width))
     xmax = max(0, min(xmax, width))
     ymin = max(0, min(ymin, height))
     ymax = max(0, min(ymax, height))
-    
+
     cropped = img.crop((xmin, ymin, xmax, ymax))
     cropped.save(output_path)
 
 def process_pdfs():
     # Initialize Google GenAI client using Vertex AI with ADC
     client = genai.Client(vertexai=True, project="summersum-agent-dev", location="us-central1")
-    
+
     task_doc = fitz.open("Herhalingsbundel van 2 naar 3 vakantietaak.pdf")
     key_doc = fitz.open("Herhalingsbundel van 2 naar 3 vakantietaak correctiesleutel.pdf")
-    
+
     db_path = "data/database.json"
     db_dict = {}
     if os.path.exists(db_path):
@@ -247,33 +247,33 @@ def process_pdfs():
                             db_dict[item["id"]] = item
         except Exception as e:
             print(f"Error loading existing database: {e}")
-    
+
     # We process specific pages of interest (e.g., page 50 onwards)
     # You can change this to process all pages: sorted(PAGE_MAPPING.keys())
     pages_to_process = sorted(PAGE_MAPPING.keys())
     for task_idx in pages_to_process:
         # Determine which page has the visible solutions to send to Gemini
         key_idx = PAGE_MAPPING.get(task_idx)
-        
+
         # Load the page we want to analyze with Gemini (preferably correctiesleutel where solutions are written)
         if key_idx is not None:
             analyze_page = key_doc[key_idx]
         else:
             analyze_page = task_doc[task_idx] # Fallback to task page where solutions are at the bottom
-            
+
         analyze_pix = analyze_page.get_pixmap(dpi=150)
         analyze_img_data = analyze_pix.tobytes("png")
-        
+
         # Call Gemini to get bounding boxes of questions and solutions on the ANALYZE page
         analysis = analyze_page_with_gemini(client, analyze_img_data, task_idx + 1)
         if not analysis or "questions" not in analysis:
             continue
-            
+
         # Load task page (blank questions) for cropping questions
         task_page = task_doc[task_idx]
         task_pix = task_page.get_pixmap(dpi=150)
         task_img = Image.open(io.BytesIO(task_pix.tobytes("png")))
-        
+
         # Load solution page (correctiesleutel or task page fallback) for cropping solutions
         if key_idx is not None:
             key_page = key_doc[key_idx]
@@ -281,29 +281,29 @@ def process_pdfs():
             sol_img = Image.open(io.BytesIO(key_pix.tobytes("png")))
         else:
             sol_img = task_img # Fallback to same task page
-            
+
         for q in analysis["questions"]:
             q_id = q["id"]
             db_id = f"p{task_idx + 1}_{q_id}"
-            
+
             # Paths
             q_path = f"data/questions/question_{db_id}.png"
             sol_path = f"data/questions/solution_{db_id}.png"
-            
+
             # Refine boxes using PDF text blocks
             refined_q_box = refine_box(task_page, q["question_box"], is_solution=False, other_box_norm=q["solution_box"])
-            
+
             if key_idx is not None:
                 refined_sol_box = refine_box(key_page, q["solution_box"], is_solution=True, other_box_norm=q["question_box"])
             else:
                 refined_sol_box = refine_box(task_page, q["solution_box"], is_solution=True, other_box_norm=q["question_box"])
-            
+
             # Crop question from the blank task PDF
             crop_and_save_pts(task_img, refined_q_box, q_path)
-            
+
             # Crop solution from the solution PDF (where answers are written)
             crop_and_save_pts(sol_img, refined_sol_box, sol_path)
-            
+
             db_dict[db_id] = {
                 "id": db_id,
                 "page": task_idx + 1,
@@ -319,13 +319,13 @@ def process_pdfs():
                 "raw_question_box": q["question_box"],
                 "raw_solution_box": q["solution_box"]
             }
-            
+
             print(f"Processed question {db_id}")
-            
+
     # Save database
     with open(db_path, "w", encoding="utf-8") as f:
         json.dump(list(db_dict.values()), f, indent=2, ensure_ascii=False)
-        
+
     print(f"Finished preprocessing. Total database contains {len(db_dict)} questions.")
 
 if __name__ == "__main__":

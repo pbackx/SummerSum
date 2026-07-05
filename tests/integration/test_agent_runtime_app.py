@@ -41,7 +41,7 @@ async def test_agent_stream_query(agent_app: AgentEngineApp) -> None:
     # Create message and events for the async_stream_query
     message = "Hi!"
     events = []
-    
+
     # Pre-create session with session state containing current_question_id
     session = await agent_app.async_create_session(
         user_id="test",
@@ -49,10 +49,10 @@ async def test_agent_stream_query(agent_app: AgentEngineApp) -> None:
             "current_question_id": "test_q"
         }
     )
-    
+
     async for event in agent_app.async_stream_query(
-        message=message, 
-        user_id="test", 
+        message=message,
+        user_id="test",
         session_id=session["id"]
     ):
         events.append(event)
