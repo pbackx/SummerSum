@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.13-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -11,10 +11,10 @@ WORKDIR /app
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Copy dependency files
-COPY pyproject.toml uv.lock ./
+COPY app/app_utils/.requirements.txt ./
 
 # Install dependencies (system-wide inside the container)
-RUN uv pip install --system -r pyproject.toml
+RUN uv pip install --system -r .requirements.txt
 
 # Copy the application source code files
 COPY app/ ./app/
