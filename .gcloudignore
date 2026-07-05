@@ -1,0 +1,17 @@
+.gcloudignore
+.git
+.gitignore
+.venv
+.pytest_cache
+.python-version
+.pre-commit-config.yaml
+.semgrep
+temp/
+tests/
+writeup/
+*.pdf
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
