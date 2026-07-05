@@ -1,11 +1,9 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // All direct client-side read and write access via the Storage SDK is disabled.
-    // Question/solution images are served publicly via GCS HTTP URLs.
-    // The FastAPI backend uses the Firebase Admin SDK and bypasses these rules securely.
     match /{allPaths=**} {
-      allow read, write: if false;
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.email == 'peter.backx@gmail.com';
     }
   }
 }

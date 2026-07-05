@@ -18,7 +18,7 @@ from google.genai import types
 # Import our Pydantic model for structured grading
 from app.agent import evaluator_agent, EvaluationResult, math_coach_agent
 from app import firebase_db
-from firebase_admin import auth
+from firebase_admin import auth, storage
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 import vertexai
@@ -116,6 +116,189 @@ def get_admin_data(user_id: str = Depends(get_admin_user)):
         "admin_email": "peter.backx@gmail.com",
         "server_time": datetime.datetime.now().isoformat()
     }
+
+@app.get("/api/admin/users")
+def get_admin_users(user_id: str = Depends(get_admin_user)):
+    try:
+        # List all users from Firebase Auth
+        users_page = auth.list_users()
+        users_list = []
+        for user in users_page.users:
+            # For each user, retrieve progress stats from Firestore
+            uid = user.uid
+            email = user.email
+            display_name = user.display_name or email
+            
+            # Fetch stats
+            stats = firebase_db.get_student_stats(uid)
+            
+            users_list.append({
+                "uid": uid,
+                "email": email,
+                "display_name": display_name,
+                "streak": stats.get("streak", 0),
+                "completed": stats.get("completed", 0),
+                "correct": stats.get("correct", 0),
+                "total_questions": stats.get("total_questions", 0),
+                "last_active": stats.get("history", [-1])[-1].get("date") if stats.get("history") else None
+            })
+        return users_list
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to fetch users: {str(e)}"
+        )
+
+class BoundingBoxModel(BaseModel):
+    xmin: float
+    ymin: float
+    xmax: float
+    ymax: float
+
+class QuestionUpdateModel(BaseModel):
+    topic: str
+    main_instruction: str
+    text_nl: str
+    difficulty: str
+    question_box: BoundingBoxModel
+    solution_box: BoundingBoxModel
+
+@app.put("/api/admin/questions/{question_id}")
+async def update_question(
+    question_id: str,
+    update_data: QuestionUpdateModel,
+    user_id: str = Depends(get_admin_user)
+):
+    # 1. Fetch current question to get page number and existing details
+    question = firebase_db.get_question(question_id)
+    if not question:
+        raise HTTPException(status_code=404, detail="Question not found")
+        
+    page_num = question["page"]
+    
+    # 2. Helper to load target full-page image
+    def get_page_image(page: int, is_key: bool) -> Image.Image:
+        suffix = "key" if is_key else "task"
+        local_path = f"data/questions/page_{page}_{suffix}.png"
+        if os.path.exists(local_path):
+            return Image.open(local_path)
+            
+        # Fallback: Download from GCS
+        try:
+            bucket = storage.bucket(os.getenv("FIREBASE_STORAGE_BUCKET"))
+            blob_path = f"pages/page_{page}_{suffix}.png"
+            blob = bucket.blob(blob_path)
+            img_bytes = blob.download_as_bytes()
+            return Image.open(io.BytesIO(img_bytes))
+        except Exception as e:
+            print(f"Error downloading page image from GCS: {e}")
+            raise HTTPException(status_code=500, detail=f"Could not retrieve full page image for page {page} ({suffix}): {str(e)}")
+            
+    # 3. Helper to crop image using points coordinates (converted to 150 DPI pixels)
+    def crop_image(img: Image.Image, box: BoundingBoxModel) -> Image.Image:
+        scale = 150.0 / 72.0
+        xmin = int(box.xmin * scale)
+        ymin = int(box.ymin * scale)
+        xmax = int(box.xmax * scale)
+        ymax = int(box.ymax * scale)
+        
+        width, height = img.size
+        xmin = max(0, min(xmin, width))
+        xmax = max(0, min(xmax, width))
+        ymin = max(0, min(ymin, height))
+        ymax = max(0, min(ymax, height))
+        
+        if xmax <= xmin: xmax = min(xmin + 10, width)
+        if ymax <= ymin: ymax = min(ymin + 10, height)
+        
+        return img.crop((xmin, ymin, xmax, ymax))
+        
+    # 4. Helper to upload to GCS
+    def upload_bytes_to_gcs(img: Image.Image, remote_path: str):
+        try:
+            bucket = storage.bucket(os.getenv("FIREBASE_STORAGE_BUCKET"))
+            blob = bucket.blob(remote_path)
+            buf = io.BytesIO()
+            img.save(buf, format="PNG")
+            buf.seek(0)
+            blob.upload_from_file(buf, content_type="image/png")
+            blob.make_public()
+            return blob.public_url, f"gs://{bucket.name}/{remote_path}"
+        except Exception as e:
+            print(f"Failed to upload to GCS: {e}")
+            return None, None
+
+    try:
+        # Re-crop images
+        q_img = get_page_image(page_num, is_key=False)
+        cropped_q = crop_image(q_img, update_data.question_box)
+        
+        sol_img = get_page_image(page_num, is_key=True)
+        cropped_sol = crop_image(sol_img, update_data.solution_box)
+        
+        # Save locally
+        os.makedirs("data/questions", exist_ok=True)
+        q_local_path = f"data/questions/question_{question_id}.png"
+        sol_local_path = f"data/questions/solution_{question_id}.png"
+        cropped_q.save(q_local_path)
+        cropped_sol.save(sol_local_path)
+        
+        # Upload to GCS
+        q_url, q_gcs = upload_bytes_to_gcs(cropped_q, f"questions/question_{question_id}.png")
+        sol_url, sol_gcs = upload_bytes_to_gcs(cropped_sol, f"questions/solution_{question_id}.png")
+        
+        # 5. Build updated document fields
+        updated_fields = {
+            "topic": update_data.topic,
+            "main_instruction": update_data.main_instruction,
+            "text_nl": update_data.text_nl,
+            "difficulty": update_data.difficulty,
+            "question_box": {
+                "xmin": update_data.question_box.xmin,
+                "ymin": update_data.question_box.ymin,
+                "xmax": update_data.question_box.xmax,
+                "ymax": update_data.question_box.ymax,
+            },
+            "solution_box": {
+                "xmin": update_data.solution_box.xmin,
+                "ymin": update_data.solution_box.ymin,
+                "xmax": update_data.solution_box.xmax,
+                "ymax": update_data.solution_box.ymax,
+            }
+        }
+        
+        if q_url:
+            updated_fields["question_image_url"] = q_url
+            updated_fields["question_image_gcs"] = q_gcs
+        if sol_url:
+            updated_fields["solution_image_url"] = sol_url
+            updated_fields["solution_image_gcs"] = sol_gcs
+            
+        # 6. Save in Firestore
+        firebase_db.db.collection("questions").document(question_id).update(updated_fields)
+        
+        # 7. Update local database.json to keep it in sync
+        db_path = "data/database.json"
+        if os.path.exists(db_path):
+            try:
+                with open(db_path, "r", encoding="utf-8") as f:
+                    questions = json.load(f)
+                
+                for q in questions:
+                    if q["id"] == question_id:
+                        q.update(updated_fields)
+                        break
+                        
+                with open(db_path, "w", encoding="utf-8") as f:
+                    json.dump(questions, f, indent=2, ensure_ascii=False)
+            except Exception as e:
+                print(f"Warning: Failed to update local database.json: {e}")
+                
+        return {"status": "success", "message": f"Question {question_id} updated successfully."}
+        
+    except Exception as e:
+        print(f"Error updating question: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to update question: {str(e)}")
 
 # Firebase configuration endpoint for the frontend client
 @app.get("/api/config")

@@ -5,15 +5,15 @@
     "question_id": "1a",
     "topic": "Rationale getallen",
     "main_instruction": "Werk uit.",
-    "text_nl": "a -7 + (-16) =",
+    "text_nl": "-7 + (-16) =",
     "difficulty": "easy",
     "question_image": "data/questions/question_p2_1a.png",
     "solution_image": "data/questions/solution_p2_1a.png",
     "question_box": {
-      "xmin": 63.70079803466797,
-      "ymin": 67.54579162597656,
-      "xmax": 294.8095397949219,
-      "ymax": 153.39678955078125
+      "xmin": 109.64634607255701,
+      "ymin": 127.19439785060445,
+      "xmax": 185.99113654728964,
+      "ymax": 158.23316302845387
     },
     "solution_box": {
       "xmin": 242.5590057373047,
