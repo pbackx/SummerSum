@@ -564,21 +564,21 @@
     "question_id": "1n",
     "topic": "Rationale getallen",
     "main_instruction": "Werk uit.",
-    "text_nl": "n $\\frac{7}{21} \\cdot (-\\frac{11}{14}) =$",
+    "text_nl": "$\\frac{7}{21} \\cdot (-\\frac{11}{14}) =$",
     "difficulty": "medium",
     "question_image": "data/questions/question_p2_1n.png",
     "solution_image": "data/questions/solution_p2_1n.png",
     "question_box": {
-      "xmin": 92.04630279541016,
-      "ymin": 500.1424255371094,
-      "xmax": 308.4441223144531,
-      "ymax": 621.203369140625
+      "xmin": 110.58573445982152,
+      "ymin": 666.1912482705328,
+      "xmax": 196.4014700817062,
+      "ymax": 708.2580917387305
     },
     "solution_box": {
-      "xmin": 243.61289978027344,
-      "ymin": 504.7376403808594,
-      "xmax": 375.3414306640625,
-      "ymax": 625.8355102539062
+      "xmin": 240.3886507951584,
+      "ymin": 666.7561518828891,
+      "xmax": 339.0686295815185,
+      "ymax": 709.6659838668967
     },
     "raw_question_box": {
       "ymin": 650,
@@ -2069,21 +2069,21 @@
     "question_id": "21a",
     "topic": "Algebra",
     "main_instruction": "Hoe groot is de oppervlakte van deze tuin?",
-    "text_nl": "Druk uit met een veelterm.",
+    "text_nl": "a. Druk uit met een veelterm.\nb. Als a = 5 m en b = 8 m, hoe groot is dan de oppervlakte?",
     "difficulty": "medium",
     "question_image": "data/questions/question_p7_21a.png",
     "solution_image": "data/questions/solution_p7_21a.png",
     "question_box": {
-      "xmin": 67.66449737548828,
-      "ymin": 29.225204467773438,
-      "xmax": 502.9715881347656,
-      "ymax": 91.29630279541016
+      "xmin": 99.10092498035971,
+      "ymin": 46.95857388590605,
+      "xmax": 562.6201943593936,
+      "ymax": 227.52082241651976
     },
     "solution_box": {
-      "xmin": 97.04720306396484,
-      "ymin": 87.16153717041016,
-      "xmax": 356.4366149902344,
-      "ymax": 162.28851318359375
+      "xmin": 99.46538980280107,
+      "ymin": 49.27661159530869,
+      "xmax": 556.9890121786196,
+      "ymax": 228.38561737845168
     },
     "raw_question_box": {
       "ymin": 76,
@@ -2101,49 +2101,6 @@
     "question_image_gcs": "gs://summersum-agent-dev.firebasestorage.app/questions/question_p7_21a.png",
     "solution_image_url": "https://storage.googleapis.com/summersum-agent-dev.firebasestorage.app/questions/solution_p7_21a.png",
     "solution_image_gcs": "gs://summersum-agent-dev.firebasestorage.app/questions/solution_p7_21a.png",
-    "task_page_image_url": "https://storage.googleapis.com/summersum-agent-dev.firebasestorage.app/pages/page_7_task.png",
-    "task_page_image_gcs": "gs://summersum-agent-dev.firebasestorage.app/pages/page_7_task.png",
-    "key_page_image_url": "https://storage.googleapis.com/summersum-agent-dev.firebasestorage.app/pages/page_7_key.png",
-    "key_page_image_gcs": "gs://summersum-agent-dev.firebasestorage.app/pages/page_7_key.png"
-  },
-  {
-    "id": "p7_21b",
-    "page": 7,
-    "question_id": "21b",
-    "topic": "Algebra",
-    "main_instruction": "Hoe groot is de oppervlakte van deze tuin?",
-    "text_nl": "Als a = 5 m en b = 8 m, hoe groot is dan de oppervlakte?",
-    "difficulty": "easy",
-    "question_image": "data/questions/question_p7_21b.png",
-    "solution_image": "data/questions/solution_p7_21b.png",
-    "question_box": {
-      "xmin": 92.04720306396484,
-      "ymin": 113.1604995727539,
-      "xmax": 361.4366149902344,
-      "ymax": 164.28851318359375
-    },
-    "solution_box": {
-      "xmin": 97.05560302734375,
-      "ymin": 170.92532348632812,
-      "xmax": 533.2156372070312,
-      "ymax": 218.2855224609375
-    },
-    "raw_question_box": {
-      "ymin": 173,
-      "xmin": 170,
-      "ymax": 187,
-      "xmax": 590
-    },
-    "raw_solution_box": {
-      "ymin": 205,
-      "xmin": 190,
-      "ymax": 252,
-      "xmax": 658
-    },
-    "question_image_url": "https://storage.googleapis.com/summersum-agent-dev.firebasestorage.app/questions/question_p7_21b.png",
-    "question_image_gcs": "gs://summersum-agent-dev.firebasestorage.app/questions/question_p7_21b.png",
-    "solution_image_url": "https://storage.googleapis.com/summersum-agent-dev.firebasestorage.app/questions/solution_p7_21b.png",
-    "solution_image_gcs": "gs://summersum-agent-dev.firebasestorage.app/questions/solution_p7_21b.png",
     "task_page_image_url": "https://storage.googleapis.com/summersum-agent-dev.firebasestorage.app/pages/page_7_task.png",
     "task_page_image_gcs": "gs://summersum-agent-dev.firebasestorage.app/pages/page_7_task.png",
     "key_page_image_url": "https://storage.googleapis.com/summersum-agent-dev.firebasestorage.app/pages/page_7_key.png",

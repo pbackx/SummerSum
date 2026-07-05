@@ -156,6 +156,8 @@ class BoundingBoxModel(BaseModel):
     ymax: float
 
 class QuestionUpdateModel(BaseModel):
+    page: int
+    question_id: str
     topic: str
     main_instruction: str
     text_nl: str
@@ -163,20 +165,12 @@ class QuestionUpdateModel(BaseModel):
     question_box: BoundingBoxModel
     solution_box: BoundingBoxModel
 
-@app.put("/api/admin/questions/{question_id}")
-async def update_question(
-    question_id: str,
-    update_data: QuestionUpdateModel,
-    user_id: str = Depends(get_admin_user)
-):
-    # 1. Fetch current question to get page number and existing details
-    question = firebase_db.get_question(question_id)
-    if not question:
-        raise HTTPException(status_code=404, detail="Question not found")
-        
-    page_num = question["page"]
-    
-    # 2. Helper to load target full-page image
+class DuplicateQuestionModel(BaseModel):
+    source_id: str
+    new_id: str
+
+def crop_and_upload_question_images(question_id: str, page_num: int, question_box: BoundingBoxModel, solution_box: BoundingBoxModel):
+    # Helper to load target full-page image
     def get_page_image(page: int, is_key: bool) -> Image.Image:
         suffix = "key" if is_key else "task"
         local_path = f"data/questions/page_{page}_{suffix}.png"
@@ -194,7 +188,7 @@ async def update_question(
             print(f"Error downloading page image from GCS: {e}")
             raise HTTPException(status_code=500, detail=f"Could not retrieve full page image for page {page} ({suffix}): {str(e)}")
             
-    # 3. Helper to crop image using points coordinates (converted to 150 DPI pixels)
+    # Helper to crop image using points coordinates (converted to 150 DPI pixels)
     def crop_image(img: Image.Image, box: BoundingBoxModel) -> Image.Image:
         scale = 150.0 / 72.0
         xmin = int(box.xmin * scale)
@@ -213,7 +207,7 @@ async def update_question(
         
         return img.crop((xmin, ymin, xmax, ymax))
         
-    # 4. Helper to upload to GCS
+    # Helper to upload to GCS
     def upload_bytes_to_gcs(img: Image.Image, remote_path: str):
         try:
             bucket = storage.bucket(os.getenv("FIREBASE_STORAGE_BUCKET"))
@@ -228,27 +222,55 @@ async def update_question(
             print(f"Failed to upload to GCS: {e}")
             return None, None
 
+    # Re-crop images
+    q_img = get_page_image(page_num, is_key=False)
+    cropped_q = crop_image(q_img, question_box)
+    
+    sol_img = get_page_image(page_num, is_key=True)
+    cropped_sol = crop_image(sol_img, solution_box)
+    
+    # Save locally
+    os.makedirs("data/questions", exist_ok=True)
+    q_local_path = f"data/questions/question_{question_id}.png"
+    sol_local_path = f"data/questions/solution_{question_id}.png"
+    cropped_q.save(q_local_path)
+    cropped_sol.save(sol_local_path)
+    
+    # Upload to GCS
+    q_url, q_gcs = upload_bytes_to_gcs(cropped_q, f"questions/question_{question_id}.png")
+    sol_url, sol_gcs = upload_bytes_to_gcs(cropped_sol, f"questions/solution_{question_id}.png")
+    
+    return q_local_path, sol_local_path, q_url, q_gcs, sol_url, sol_gcs
+
+@app.put("/api/admin/questions/{question_id}")
+async def update_question(
+    question_id: str,
+    update_data: QuestionUpdateModel,
+    user_id: str = Depends(get_admin_user)
+):
+    question = firebase_db.get_question(question_id)
+    if not question:
+        raise HTTPException(status_code=404, detail="Question not found")
+        
     try:
-        # Re-crop images
-        q_img = get_page_image(page_num, is_key=False)
-        cropped_q = crop_image(q_img, update_data.question_box)
+        # Re-crop images using helper
+        q_local, sol_local, q_url, q_gcs, sol_url, sol_gcs = crop_and_upload_question_images(
+            question_id,
+            update_data.page,
+            update_data.question_box,
+            update_data.solution_box
+        )
         
-        sol_img = get_page_image(page_num, is_key=True)
-        cropped_sol = crop_image(sol_img, update_data.solution_box)
-        
-        # Save locally
-        os.makedirs("data/questions", exist_ok=True)
-        q_local_path = f"data/questions/question_{question_id}.png"
-        sol_local_path = f"data/questions/solution_{question_id}.png"
-        cropped_q.save(q_local_path)
-        cropped_sol.save(sol_local_path)
-        
-        # Upload to GCS
-        q_url, q_gcs = upload_bytes_to_gcs(cropped_q, f"questions/question_{question_id}.png")
-        sol_url, sol_gcs = upload_bytes_to_gcs(cropped_sol, f"questions/solution_{question_id}.png")
-        
-        # 5. Build updated document fields
+        # Construct dynamic page task/key image fields
+        task_page_url = f"https://storage.googleapis.com/summersum-agent-dev.firebasestorage.app/pages/page_{update_data.page}_task.png"
+        task_page_gcs = f"gs://summersum-agent-dev.firebasestorage.app/pages/page_{update_data.page}_task.png"
+        key_page_url = f"https://storage.googleapis.com/summersum-agent-dev.firebasestorage.app/pages/page_{update_data.page}_key.png"
+        key_page_gcs = f"gs://summersum-agent-dev.firebasestorage.app/pages/page_{update_data.page}_key.png"
+
+        # Build updated document fields
         updated_fields = {
+            "page": update_data.page,
+            "question_id": update_data.question_id,
             "topic": update_data.topic,
             "main_instruction": update_data.main_instruction,
             "text_nl": update_data.text_nl,
@@ -264,20 +286,26 @@ async def update_question(
                 "ymin": update_data.solution_box.ymin,
                 "xmax": update_data.solution_box.xmax,
                 "ymax": update_data.solution_box.ymax,
-            }
+            },
+            "task_page_image_url": task_page_url,
+            "task_page_image_gcs": task_page_gcs,
+            "key_page_image_url": key_page_url,
+            "key_page_image_gcs": key_page_gcs
         }
         
         if q_url:
             updated_fields["question_image_url"] = q_url
             updated_fields["question_image_gcs"] = q_gcs
+            updated_fields["question_image"] = q_local
         if sol_url:
             updated_fields["solution_image_url"] = sol_url
             updated_fields["solution_image_gcs"] = sol_gcs
+            updated_fields["solution_image"] = sol_local
             
-        # 6. Save in Firestore
+        # Save in Firestore
         firebase_db.db.collection("questions").document(question_id).update(updated_fields)
         
-        # 7. Update local database.json to keep it in sync
+        # Update local database.json to keep it in sync
         db_path = "data/database.json"
         if os.path.exists(db_path):
             try:
@@ -299,6 +327,126 @@ async def update_question(
     except Exception as e:
         print(f"Error updating question: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to update question: {str(e)}")
+
+@app.post("/api/admin/questions/duplicate")
+async def duplicate_question(
+    data: DuplicateQuestionModel,
+    user_id: str = Depends(get_admin_user)
+):
+    source_id = data.source_id.strip()
+    new_id = data.new_id.strip()
+    
+    if not source_id or not new_id:
+        raise HTTPException(status_code=400, detail="Source ID and New ID cannot be empty.")
+        
+    existing = firebase_db.get_question(new_id)
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Vraag met ID '{new_id}' bestaat al.")
+        
+    source_question = firebase_db.get_question(source_id)
+    if not source_question:
+        raise HTTPException(status_code=404, detail="Source question not found")
+        
+    try:
+        q_box_model = BoundingBoxModel(**source_question["question_box"])
+        sol_box_model = BoundingBoxModel(**source_question["solution_box"])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Invalid bounding box in source question: {str(e)}")
+        
+    try:
+        q_local, sol_local, q_url, q_gcs, sol_url, sol_gcs = crop_and_upload_question_images(
+            new_id,
+            source_question["page"],
+            q_box_model,
+            sol_box_model
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate cropped images for duplicate: {str(e)}")
+        
+    new_question = {
+        "id": new_id,
+        "page": source_question["page"],
+        "question_id": source_question.get("question_id", "") + "_kopie",
+        "topic": source_question.get("topic", ""),
+        "main_instruction": source_question.get("main_instruction", ""),
+        "text_nl": source_question.get("text_nl", ""),
+        "difficulty": source_question.get("difficulty", "medium"),
+        "question_image": q_local,
+        "solution_image": sol_local,
+        "question_box": source_question["question_box"],
+        "solution_box": source_question["solution_box"],
+        "question_image_url": q_url,
+        "question_image_gcs": q_gcs,
+        "solution_image_url": sol_url,
+        "solution_image_gcs": sol_gcs,
+        "task_page_image_url": source_question.get("task_page_image_url"),
+        "task_page_image_gcs": source_question.get("task_page_image_gcs"),
+        "key_page_image_url": source_question.get("key_page_image_url"),
+        "key_page_image_gcs": source_question.get("key_page_image_gcs")
+    }
+    
+    try:
+        firebase_db.create_question(new_id, new_question)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save duplicated question to Firestore: {str(e)}")
+        
+    db_path = "data/database.json"
+    if os.path.exists(db_path):
+        try:
+            with open(db_path, "r", encoding="utf-8") as f:
+                questions = json.load(f)
+            
+            questions.append(new_question)
+            
+            with open(db_path, "w", encoding="utf-8") as f:
+                json.dump(questions, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"Warning: Failed to update local database.json on duplicate: {e}")
+            
+    return {"status": "success", "message": f"Question {source_id} duplicated successfully.", "question": new_question}
+
+@app.delete("/api/admin/questions/{question_id}")
+async def delete_question(
+    question_id: str,
+    user_id: str = Depends(get_admin_user)
+):
+    question = firebase_db.get_question(question_id)
+    if not question:
+        raise HTTPException(status_code=404, detail="Question not found")
+        
+    try:
+        firebase_db.delete_question(question_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete question from Firestore: {str(e)}")
+        
+    q_local_path = f"data/questions/question_{question_id}.png"
+    sol_local_path = f"data/questions/solution_{question_id}.png"
+    if os.path.exists(q_local_path):
+        try:
+            os.remove(q_local_path)
+        except Exception as e:
+            print(f"Failed to delete local question image: {e}")
+    if os.path.exists(sol_local_path):
+        try:
+            os.remove(sol_local_path)
+        except Exception as e:
+            print(f"Failed to delete local solution image: {e}")
+            
+    db_path = "data/database.json"
+    if os.path.exists(db_path):
+        try:
+            with open(db_path, "r", encoding="utf-8") as f:
+                questions = json.load(f)
+            
+            questions = [q for q in questions if q["id"] != question_id]
+            
+            with open(db_path, "w", encoding="utf-8") as f:
+                json.dump(questions, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"Warning: Failed to update local database.json on delete: {e}")
+            
+    return {"status": "success", "message": f"Question {question_id} deleted successfully."}
+
 
 # Firebase configuration endpoint for the frontend client
 @app.get("/api/config")

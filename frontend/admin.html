@@ -161,6 +161,26 @@
         .admin-table tbody tr:hover {
             background-color: rgba(255, 255, 255, 0.02);
         }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
+            border: none;
+        }
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
+        }
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-glass);
+            color: var(--text-main);
+        }
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body style="background: radial-gradient(circle at 50% 50%, #1e1b4b 0%, #09090b 100%); color: var(--text-main); font-family: var(--font-body); height: 100vh; overflow: hidden; display: flex; justify-content: center; align-items: center; margin: 0;">
@@ -259,18 +279,36 @@
                     
                     <!-- Active Editor Form -->
                     <div id="editor-form-container" class="hidden" style="display: flex; flex-direction: column; height: 100%; overflow: hidden;">
-                        <!-- Header with ID and Save button -->
+                        <!-- Header with ID, Duplicate, Delete and Save button -->
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-shrink: 0;">
                             <h3 style="font-family: var(--font-heading); font-size: 22px; font-weight: 700; margin: 0;">Bewerk Vraag: <span id="editor-question-id" style="color: var(--accent);"></span></h3>
-                            <button id="btn-save-question" class="btn btn-primary" style="padding: 10px 20px; border-radius: 10px; font-family: var(--font-heading); font-weight: 600; display: flex; align-items: center; gap: 8px; border: none; cursor: pointer; color: white;">
-                                <i class="fa-solid fa-floppy-disk"></i> Wijzigingen Opslaan
-                            </button>
+                            <div style="display: flex; gap: 8px;">
+                                <button id="btn-duplicate-question" class="btn btn-secondary" style="padding: 10px 16px; border-radius: 10px; font-family: var(--font-heading); font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <i class="fa-solid fa-copy"></i> Dupliceren
+                                </button>
+                                <button id="btn-delete-question" class="btn btn-danger" style="padding: 10px 16px; border-radius: 10px; font-family: var(--font-heading); font-weight: 600; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <i class="fa-solid fa-trash"></i> Verwijderen
+                                </button>
+                                <button id="btn-save-question" class="btn btn-primary" style="padding: 10px 20px; border-radius: 10px; font-family: var(--font-heading); font-weight: 600; display: flex; align-items: center; gap: 8px; border: none; cursor: pointer; color: white;">
+                                    <i class="fa-solid fa-floppy-disk"></i> Wijzigingen Opslaan
+                                </button>
+                            </div>
                         </div>
                         
                         <!-- Editor Fields & Cropper -->
                         <div style="flex: 1; display: flex; flex-direction: row; gap: 24px; overflow: hidden;">
                             <!-- Text fields (Left) -->
                             <div style="width: 280px; display: flex; flex-direction: column; gap: 16px; overflow-y: auto; padding-right: 8px; flex-shrink: 0; text-align: left;">
+                                <div style="display: flex; gap: 12px;">
+                                    <div style="flex: 1;">
+                                        <label style="display: block; font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; font-weight: 600; letter-spacing: 0.5px;">Pagina</label>
+                                        <input type="number" id="edit-page" min="1" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.2); color: var(--text-main); font-family: var(--font-body); outline: none;">
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <label style="display: block; font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; font-weight: 600; letter-spacing: 0.5px;">Vraag ID</label>
+                                        <input type="text" id="edit-question-id" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.2); color: var(--text-main); font-family: var(--font-body); outline: none;">
+                                    </div>
+                                </div>
                                 <div>
                                     <label style="display: block; font-size: 11px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; font-weight: 600; letter-spacing: 0.5px;">Onderwerp (Topic)</label>
                                     <input type="text" id="edit-topic" style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-glass); background: rgba(0,0,0,0.2); color: var(--text-main); font-family: var(--font-body); outline: none;">
@@ -366,6 +404,8 @@
             const editorFormContainer = document.getElementById("editor-form-container");
             
             const editorQuestionId = document.getElementById("editor-question-id");
+            const editPage = document.getElementById("edit-page");
+            const editQuestionId = document.getElementById("edit-question-id");
             const editTopic = document.getElementById("edit-topic");
             const editInstruction = document.getElementById("edit-instruction");
             const editText = document.getElementById("edit-text");
@@ -378,6 +418,8 @@
             const cropperPageNum = document.getElementById("cropper-page-num");
             const btnResetCrop = document.getElementById("btn-reset-crop");
             const cropperTargetImg = document.getElementById("cropper-target-img");
+            const btnDuplicateQuestion = document.getElementById("btn-duplicate-question");
+            const btnDeleteQuestion = document.getElementById("btn-delete-question");
             const btnSaveQuestion = document.getElementById("btn-save-question");
 
             const API_BASE = window.location.origin + "/api";
@@ -589,6 +631,8 @@
                 
                 // Populate fields
                 editorQuestionId.textContent = q.id;
+                editPage.value = q.page;
+                editQuestionId.value = q.question_id || "";
                 editTopic.value = q.topic;
                 editInstruction.value = q.main_instruction || "";
                 editText.value = q.text_nl || "";
@@ -710,6 +754,131 @@
                 resetToSavedBox();
             });
             
+            // Page change listener to reload cropper image dynamically
+            editPage.addEventListener("change", () => {
+                const newPage = parseInt(editPage.value);
+                if (!isNaN(newPage) && newPage > 0 && selectedQuestion) {
+                    saveCurrentCropState();
+                    selectedQuestion.page = newPage;
+                    cropperPageNum.textContent = newPage;
+                    loadCropperImage();
+                }
+            });
+            
+            // Duplicate Question details
+            btnDuplicateQuestion.addEventListener("click", async () => {
+                if (!selectedQuestion) return;
+                
+                const newId = prompt("Voer een nieuwe unieke ID in voor de gedupliceerde vraag (bijv. p2_1a_kopie):");
+                if (newId === null) return; // User cancelled
+                
+                const trimmedId = newId.trim();
+                if (!trimmedId) {
+                    alert("ID mag niet leeg zijn.");
+                    return;
+                }
+                
+                if (allQuestions.some(q => q.id.toLowerCase() === trimmedId.toLowerCase())) {
+                    alert(`Een vraag met ID '${trimmedId}' bestaat al.`);
+                    return;
+                }
+                
+                btnDuplicateQuestion.disabled = true;
+                const originalText = btnDuplicateQuestion.innerHTML;
+                btnDuplicateQuestion.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Dupliceren...';
+                
+                try {
+                    const res = await fetch(`${API_BASE}/admin/questions/duplicate`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${idToken}`
+                        },
+                        body: JSON.stringify({
+                            source_id: selectedQuestion.id,
+                            new_id: trimmedId
+                        })
+                    });
+                    
+                    if (!res.ok) {
+                        const errData = await res.json();
+                        throw new Error(errData.detail || "Fout bij dupliceren van vraag.");
+                    }
+                    
+                    const resData = await res.json();
+                    alert("Vraag succesvol gedupliceerd!");
+                    
+                    // Add to cache list
+                    allQuestions.push(resData.question);
+                    
+                    // Sort list again
+                    allQuestions.sort((a, b) => {
+                        if (a.page !== b.page) {
+                            return a.page - b.page;
+                        }
+                        return a.question_id.localeCompare(b.question_id, undefined, { numeric: true, sensitivity: 'base' });
+                    });
+                    
+                    // Re-render
+                    renderQuestionsList(allQuestions);
+                    
+                    // Select new question
+                    selectQuestion(resData.question);
+                } catch (err) {
+                    alert("Dupliceren mislukt: " + err.message);
+                } finally {
+                    btnDuplicateQuestion.disabled = false;
+                    btnDuplicateQuestion.innerHTML = originalText;
+                }
+            });
+            
+            // Delete Question details
+            btnDeleteQuestion.addEventListener("click", async () => {
+                if (!selectedQuestion) return;
+                
+                if (!confirm(`Weet je zeker dat je vraag '${selectedQuestion.id}' wilt verwijderen? Dit kan niet ongedaan worden gemaakt.`)) {
+                    return;
+                }
+                
+                btnDeleteQuestion.disabled = true;
+                const originalText = btnDeleteQuestion.innerHTML;
+                btnDeleteQuestion.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verwijderen...';
+                
+                try {
+                    const res = await fetch(`${API_BASE}/admin/questions/${selectedQuestion.id}`, {
+                        method: "DELETE",
+                        headers: {
+                            "Authorization": `Bearer ${idToken}`
+                        }
+                    });
+                    
+                    if (!res.ok) {
+                        const errData = await res.json();
+                        throw new Error(errData.detail || "Fout bij verwijderen van vraag.");
+                    }
+                    
+                    alert("Vraag succesvol verwijderd!");
+                    
+                    // Remove from cache list
+                    allQuestions = allQuestions.filter(q => q.id !== selectedQuestion.id);
+                    
+                    // Clear selected question
+                    selectedQuestion = null;
+                    
+                    // Hide editor form, show empty state
+                    editorFormContainer.classList.add("hidden");
+                    editorEmptyState.classList.remove("hidden");
+                    
+                    // Re-render
+                    renderQuestionsList(allQuestions);
+                } catch (err) {
+                    alert("Verwijderen mislukt: " + err.message);
+                } finally {
+                    btnDeleteQuestion.disabled = false;
+                    btnDeleteQuestion.innerHTML = originalText;
+                }
+            });
+            
             // Save Question details
             btnSaveQuestion.addEventListener("click", async () => {
                 if (!selectedQuestion) return;
@@ -722,6 +891,8 @@
                 btnSaveQuestion.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Bezig met opslaan...';
                 
                 const payload = {
+                    page: parseInt(editPage.value),
+                    question_id: editQuestionId.value.trim(),
                     topic: editTopic.value.trim(),
                     main_instruction: editInstruction.value.trim(),
                     text_nl: editText.value.trim(),

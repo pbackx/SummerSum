@@ -215,3 +215,12 @@ def submit_user_solution(user_id: str, question_id: str, is_correct: bool) -> in
     }, merge=True)
     
     return streak
+
+def delete_question(question_id: str):
+    """Deletes a question from Firestore."""
+    db.collection("questions").document(question_id).delete()
+
+def create_question(question_id: str, question_data: dict):
+    """Creates a new question in Firestore."""
+    db.collection("questions").document(question_id).set(question_data)
+
