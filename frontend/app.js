@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", async () => {
-    const API_BASE = "http://localhost:8000/api";
+    const API_BASE = window.location.origin + "/api";
     
     // DOM Elements
     const chatMessages = document.getElementById("chat-messages");
@@ -115,7 +115,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             currentQuestion = question;
             
             // Construct the path to serve the image (from GCS public URL or local fallback)
-            const questionImageUrl = question.question_image_url || `http://localhost:8000/${question.question_image}`;
+            const questionImageUrl = question.question_image_url || `${window.location.origin}/${question.question_image}`;
             
             const extra = `
                 <div class="question-msg-content">
@@ -228,7 +228,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                         <div id="${expId}" class="explanation-content hidden">
                             <p>${data.explanation}</p>
                             <h4 style="margin: 8px 0 4px 0;">Correcte Oplossing:</h4>
-                            <img src="${currentQuestion.solution_image_url || `http://localhost:8000/${currentQuestion.solution_image}`}" class="solution-img" alt="Oplossing">
+                            <img src="${currentQuestion.solution_image_url || `${window.location.origin}/${currentQuestion.solution_image}`}" class="solution-img" alt="Oplossing">
                         </div>
                     </div>
                 </div>
